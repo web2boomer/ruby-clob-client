@@ -99,3 +99,6 @@ Thumbs.db
 # Ignore temporary files
 *.tmp
 *.temp 
+
+
+/py-clob-client

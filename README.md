@@ -40,7 +40,7 @@ Below is a comprehensive usage guide for the ruby-clob-client gem. This client s
 First, require the gem and initialize a client:
 
 ```ruby
-require 'ruby-clob-client'
+require 'ruby-clob-client'git st
 
 # Initialize with host URL (use appropriate environment)
 client = RubyClobClient::Client.new(
