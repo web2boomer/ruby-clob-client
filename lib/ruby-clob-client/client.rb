@@ -1,0 +1,678 @@
+# frozen_string_literal: true
+require 'net/http'
+require 'uri'
+require 'logger'
+require_relative 'clob_types'
+require 'json'
+
+module RubyClobClient
+  class Client
+    attr_reader :host, :chain_id, :signer, :creds, :mode, :builder, :logger
+
+    def initialize(host:, chain_id: nil, key: nil, creds: nil, signature_type: nil, funder: nil)
+      # Remove trailing slash from host
+      @host = host.end_with?('/') ? host[0..-2] : host
+      @chain_id = chain_id
+      @signer = key ? Signer.new(key, chain_id) : nil
+      @creds = creds
+      @mode = get_client_mode
+      @builder = @signer ? OrderBuilder.new(@signer, sig_type: signature_type, funder: funder) : nil
+      @logger = Logger.new($stdout)
+      # Local cache
+      @tick_sizes = {}
+      @neg_risk = {}
+    end
+
+    def get_address
+      @signer ? @signer.address : nil
+    end
+
+    def get_ok
+      uri = URI.parse("#{@host}/")
+      Net::HTTP.get_response(uri)
+    end
+
+    def get_server_time
+      uri = URI.parse("#{@host}/time")
+      Net::HTTP.get_response(uri)
+    end
+
+    def create_api_key(nonce: nil)
+      # TODO: Implement assert_level_1_auth
+      endpoint = "#{@host}/create_api_key"
+      headers = RubyClobClient::Headers.create_level_1_headers(@signer, nonce)
+      uri = URI.parse(endpoint)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        creds_raw = JSON.parse(response.body)
+        RubyClobClient::ApiCreds.new(
+          api_key: creds_raw["apiKey"],
+          api_secret: creds_raw["secret"],
+          api_passphrase: creds_raw["passphrase"]
+        )
+      else
+        @logger.error("Couldn't create CLOB creds: #{response.body}")
+        nil
+      end
+    end
+
+    def derive_api_key(nonce: nil)
+      # TODO: Implement assert_level_1_auth
+      endpoint = "#{@host}/derive_api_key"
+      headers = RubyClobClient::Headers.create_level_1_headers(@signer, nonce)
+      uri = URI.parse(endpoint)
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        creds_raw = JSON.parse(response.body)
+        RubyClobClient::ApiCreds.new(
+          api_key: creds_raw["apiKey"],
+          api_secret: creds_raw["secret"],
+          api_passphrase: creds_raw["passphrase"]
+        )
+      else
+        @logger.error("Couldn't derive CLOB creds: #{response.body}")
+        nil
+      end
+    end
+
+    def create_or_derive_api_creds(nonce: nil)
+      begin
+        create_api_key(nonce: nonce)
+      rescue StandardError
+        derive_api_key(nonce: nonce)
+      end
+    end
+
+    def set_api_creds(creds)
+      @creds = creds
+      @mode = get_client_mode
+    end
+
+    def get_api_keys
+      # TODO: Implement assert_level_2_auth
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/get_api_keys')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/get_api_keys")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get API keys: #{response.body}")
+        nil
+      end
+    end
+
+    def get_closed_only_mode
+      # TODO: Implement assert_level_2_auth
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/closed_only')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/closed_only")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get closed only mode: #{response.body}")
+        nil
+      end
+    end
+
+    def delete_api_key
+      # TODO: Implement assert_level_2_auth
+      request_args = RubyClobClient::RequestArgs.new(method: 'DELETE', request_path: '/delete_api_key')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/delete_api_key")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Delete.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't delete API key: #{response.body}")
+        nil
+      end
+    end
+
+    def get_midpoint(token_id)
+      uri = URI.parse("#{@host}/mid_point?token_id=#{token_id}")
+      Net::HTTP.get_response(uri)
+    end
+
+    def get_midpoints(params)
+      uri = URI.parse("#{@host}/mid_points")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
+      body = params.map { |param| { token_id: param.token_id } }
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get midpoints: #{response.body}")
+        nil
+      end
+    end
+
+    def get_price(token_id, side)
+      uri = URI.parse("#{@host}/price?token_id=#{token_id}&side=#{side}")
+      Net::HTTP.get_response(uri)
+    end
+
+    def get_prices(params)
+      uri = URI.parse("#{@host}/get_prices")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
+      body = params.map { |param| { token_id: param.token_id, side: param.side } }
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get prices: #{response.body}")
+        nil
+      end
+    end
+
+    def get_spread(token_id)
+      uri = URI.parse("#{@host}/get_spread?token_id=#{token_id}")
+      Net::HTTP.get_response(uri)
+    end
+
+    def get_spreads(params)
+      uri = URI.parse("#{@host}/get_spreads")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
+      body = params.map { |param| { token_id: param.token_id } }
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get spreads: #{response.body}")
+        nil
+      end
+    end
+
+    def get_tick_size(token_id)
+      return @tick_sizes[token_id] if @tick_sizes.key?(token_id)
+      uri = URI.parse("#{@host}/get_tick_size?token_id=#{token_id}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        result = JSON.parse(response.body)
+        @tick_sizes[token_id] = result["minimum_tick_size"].to_s
+        @tick_sizes[token_id]
+      else
+        @logger.error("Couldn't get tick size: #{response.body}")
+        nil
+      end
+    end
+
+    def get_neg_risk(token_id)
+      return @neg_risk[token_id] if @neg_risk.key?(token_id)
+      uri = URI.parse("#{@host}/get_neg_risk?token_id=#{token_id}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        result = JSON.parse(response.body)
+        @neg_risk[token_id] = result["neg_risk"]
+        result["neg_risk"]
+      else
+        @logger.error("Couldn't get neg risk: #{response.body}")
+        nil
+      end
+    end
+
+    def get_orders(params = nil, next_cursor = 'MA==')
+      # TODO: Implement assert_level_2_auth and cursor-based pagination
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/orders')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/orders")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get orders: #{response.body}")
+        nil
+      end
+    end
+
+    def get_order_book(token_id)
+      uri = URI.parse("#{@host}/get_order_book?token_id=#{token_id}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get order book: #{response.body}")
+        nil
+      end
+    end
+
+    def get_order_books(params)
+      uri = URI.parse("#{@host}/get_order_books")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
+      body = params.map { |param| { token_id: param.token_id } }
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get order books: #{response.body}")
+        nil
+      end
+    end
+
+    def get_order(order_id)
+      # TODO: Implement assert_level_2_auth
+      endpoint = "/get_order#{order_id}"
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: endpoint)
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}#{endpoint}")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get order: #{response.body}")
+        nil
+      end
+    end
+
+    def get_trades(params = nil, next_cursor = 'MA==')
+      # TODO: Implement assert_level_2_auth and cursor-based pagination
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/trades')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/trades")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get trades: #{response.body}")
+        nil
+      end
+    end
+
+    def get_last_trade_price(token_id)
+      uri = URI.parse("#{@host}/get_last_trade_price?token_id=#{token_id}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get last trade price: #{response.body}")
+        nil
+      end
+    end
+
+    def get_last_trades_prices(params)
+      uri = URI.parse("#{@host}/get_last_trades_prices")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
+      body = params.map { |param| { token_id: param.token_id } }
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get last trades prices: #{response.body}")
+        nil
+      end
+    end
+
+    def create_order(order_args, options = nil)
+      # TODO: Implement assert_level_1_auth and builder logic
+      tick_size = get_tick_size(order_args.token_id)
+      # TODO: Validate price with tick_size
+      neg_risk = options&.neg_risk || get_neg_risk(order_args.token_id)
+      # Stub builder call
+      @builder&.create_order(order_args, { tick_size: tick_size, neg_risk: neg_risk })
+    end
+
+    def create_market_order(order_args, options = nil)
+      # TODO: Implement assert_level_1_auth and builder logic
+      tick_size = get_tick_size(order_args.token_id)
+      # TODO: Calculate price if not present
+      neg_risk = options&.neg_risk || get_neg_risk(order_args.token_id)
+      # Stub builder call
+      @builder&.create_market_order(order_args, { tick_size: tick_size, neg_risk: neg_risk })
+    end
+
+    def post_orders(args)
+      # TODO: Implement assert_level_2_auth and order_to_json
+      body = args.map { |arg| arg.order } # Stub: should serialize order
+      request_args = RubyClobClient::RequestArgs.new(method: 'POST', request_path: '/post_orders', body: body)
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/post_orders")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't post orders: #{response.body}")
+        nil
+      end
+    end
+
+    def post_order(order, order_type = RubyClobClient::OrderType::GTC)
+      # TODO: Implement assert_level_2_auth and order_to_json
+      body = order # Stub: should serialize order
+      request_args = RubyClobClient::RequestArgs.new(method: 'POST', request_path: '/post_order', body: body)
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/post_order")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't post order: #{response.body}")
+        nil
+      end
+    end
+
+    def create_and_post_order(order_args, options = nil)
+      ord = create_order(order_args, options)
+      post_order(ord)
+    end
+
+    def cancel(order_id)
+      # TODO: Implement assert_level_2_auth
+      body = { orderID: order_id }
+      request_args = RubyClobClient::RequestArgs.new(method: 'DELETE', request_path: '/cancel', body: body)
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/cancel")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Delete.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't cancel order: #{response.body}")
+        nil
+      end
+    end
+
+    def cancel_orders(order_ids)
+      # TODO: Implement assert_level_2_auth
+      body = order_ids
+      request_args = RubyClobClient::RequestArgs.new(method: 'DELETE', request_path: '/cancel_orders', body: body)
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/cancel_orders")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Delete.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't cancel orders: #{response.body}")
+        nil
+      end
+    end
+
+    def cancel_all
+      # TODO: Implement assert_level_2_auth
+      request_args = RubyClobClient::RequestArgs.new(method: 'DELETE', request_path: '/cancel_all')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/cancel_all")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Delete.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't cancel all orders: #{response.body}")
+        nil
+      end
+    end
+
+    def cancel_market_orders(market: '', asset_id: '')
+      # TODO: Implement assert_level_2_auth
+      body = { market: market, asset_id: asset_id }
+      request_args = RubyClobClient::RequestArgs.new(method: 'DELETE', request_path: '/cancel_market_orders', body: body)
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/cancel_market_orders")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Delete.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't cancel market orders: #{response.body}")
+        nil
+      end
+    end
+
+    def get_notifications
+      # TODO: Implement assert_level_2_auth
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/get_notifications')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/get_notifications")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get notifications: #{response.body}")
+        nil
+      end
+    end
+
+    def drop_notifications(params = nil)
+      # TODO: Implement assert_level_2_auth and drop_notifications_query_params
+      request_args = RubyClobClient::RequestArgs.new(method: 'DELETE', request_path: '/drop_notifications')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/drop_notifications")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Delete.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't drop notifications: #{response.body}")
+        nil
+      end
+    end
+
+    def get_balance_allowance(params = nil)
+      # TODO: Implement assert_level_2_auth and add_balance_allowance_params_to_url
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/get_balance_allowance')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/get_balance_allowance")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get balance allowance: #{response.body}")
+        nil
+      end
+    end
+
+    def update_balance_allowance(params = nil)
+      # TODO: Implement assert_level_2_auth and add_balance_allowance_params_to_url
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/update_balance_allowance')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/update_balance_allowance")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't update balance allowance: #{response.body}")
+        nil
+      end
+    end
+
+    def is_order_scoring(params)
+      # TODO: Implement assert_level_2_auth and add_order_scoring_params_to_url
+      request_args = RubyClobClient::RequestArgs.new(method: 'GET', request_path: '/is_order_scoring')
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/is_order_scoring")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Get.new(uri.request_uri, headers)
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't check if order is scoring: #{response.body}")
+        nil
+      end
+    end
+
+    def are_orders_scoring(params)
+      # TODO: Implement assert_level_2_auth
+      body = params.orderIds
+      request_args = RubyClobClient::RequestArgs.new(method: 'POST', request_path: '/are_orders_scoring', body: body)
+      headers = RubyClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
+      uri = URI.parse("#{@host}/are_orders_scoring")
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == 'https'
+      request = Net::HTTP::Post.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
+      request.body = body.to_json
+      response = http.request(request)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't check if orders are scoring: #{response.body}")
+        nil
+      end
+    end
+
+    def get_sampling_markets(next_cursor = 'MA==')
+      uri = URI.parse("#{@host}/get_sampling_markets?next_cursor=#{next_cursor}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get sampling markets: #{response.body}")
+        nil
+      end
+    end
+
+    def get_sampling_simplified_markets(next_cursor = 'MA==')
+      uri = URI.parse("#{@host}/get_sampling_simplified_markets?next_cursor=#{next_cursor}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get sampling simplified markets: #{response.body}")
+        nil
+      end
+    end
+
+    def get_markets(next_cursor = 'MA==')
+      uri = URI.parse("#{@host}/get_markets?next_cursor=#{next_cursor}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get markets: #{response.body}")
+        nil
+      end
+    end
+
+    def get_simplified_markets(next_cursor = 'MA==')
+      uri = URI.parse("#{@host}/get_simplified_markets?next_cursor=#{next_cursor}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get simplified markets: #{response.body}")
+        nil
+      end
+    end
+
+    def get_market(condition_id)
+      uri = URI.parse("#{@host}/get_market#{condition_id}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get market: #{response.body}")
+        nil
+      end
+    end
+
+    def get_market_trades_events(condition_id)
+      uri = URI.parse("#{@host}/get_market_trades_events#{condition_id}")
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPSuccess)
+        JSON.parse(response.body)
+      else
+        @logger.error("Couldn't get market trades events: #{response.body}")
+        nil
+      end
+    end
+
+    def calculate_market_price(token_id, side, amount, order_type)
+      # TODO: Implement market price calculation logic
+      nil
+    end
+
+    def assert_level_1_auth
+      # TODO: Implement proper mode check and exception
+      raise 'Level 1 Auth required' unless @mode && @mode >= 1
+    end
+
+    def assert_level_2_auth
+      # TODO: Implement proper mode check and exception
+      raise 'Level 2 Auth required' unless @mode && @mode >= 2
+    end
+
+    private
+
+    def get_client_mode
+      # 2 = L2, 1 = L1, 0 = L0
+      if @signer && @creds
+        2
+      elsif @signer
+        1
+      else
+        0
+      end
+    end
+  end
+end 
