@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# require 'eth'
+require 'eth'
 
 module RubyClobClient
   class Signer
