@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "ruby_clob_client"
+require "ruby-clob-client"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

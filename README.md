@@ -1,4 +1,4 @@
-# RubyClobClient - Work in progress!!!
+# ruby-clob-client - Work in progress!!!
 
 Ruby client for the Polymarket CLOB. Full API documentation can be found [here](https://docs.polymarket.com/developers/dev-resources/main).
 
@@ -33,14 +33,14 @@ See [this gist](https://gist.github.com/poly-rodr/44313920481de58d5a3f6d1f8226bd
 
 ### Usage
 
-Below is a comprehensive usage guide for the RubyClobClient gem. This client supports both Level 1 (private key) and Level 2 (API credentials) authentication modes.
+Below is a comprehensive usage guide for the ruby-clob-client gem. This client supports both Level 1 (private key) and Level 2 (API credentials) authentication modes.
 
 #### Basic Setup
 
 First, require the gem and initialize a client:
 
 ```ruby
-require 'ruby_clob_client'
+require 'ruby-clob-client'
 
 # Initialize with host URL (use appropriate environment)
 client = RubyClobClient::Client.new(
@@ -191,7 +191,7 @@ puts "Allowance update: #{update_response}"
 Here's a complete example showing how to place a limit order:
 
 ```ruby
-require 'ruby_clob_client'
+require 'ruby-clob-client'
 
 # Initialize client with private key
 client = RubyClobClient::Client.new(
