@@ -1,16 +1,16 @@
 # ruby-clob-client - Work in progress!!!
 
-Ruby client for the Polymarket CLOB. Full API documentation can be found [here](https://docs.polymarket.com/developers/dev-resources/main).
+Ruby client for the Polymarket CLOB. Full API documentation can be found [here](https://docs.polymarket.com/developers/dev-resources/main). Ported from [py-clob-client](https://github.com/Polymarket/py-clob-client).
 
 ### Installation
 
 Install the gem and add to the application's Gemfile by executing:
 
-    $ bundle add UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
+    $ bundle add 'ruby-clob-client'
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install UPDATE_WITH_YOUR_GEM_NAME_PRIOR_TO_RELEASE_TO_RUBYGEMS_ORG
+    $ gem install 'ruby-clob-client'
 
 ### Requisites
 
@@ -40,7 +40,7 @@ Below is a comprehensive usage guide for the ruby-clob-client gem. This client s
 First, require the gem and initialize a client:
 
 ```ruby
-require 'ruby-clob-client'git st
+require 'ruby-clob-client'
 
 # Initialize with host URL (use appropriate environment)
 client = RubyClobClient::Client.new(
