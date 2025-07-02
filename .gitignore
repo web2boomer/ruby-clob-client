@@ -90,7 +90,7 @@ Thumbs.db
 /coverage/
 
 # Ignore dependency lock files (optional - some prefer to commit these)
-# Gemfile.lock
+Gemfile.lock
 
 # Ignore backup files
 *.bak
