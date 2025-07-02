@@ -17,7 +17,6 @@ module RubyClobClient
       @creds = creds
       @mode = get_client_mode
       @builder = @signer ? OrderBuilder.new(@signer, sig_type: signature_type, funder: funder) : nil
-      @logger = Logger.new($stdout)
       # Local cache
       @tick_sizes = {}
       @neg_risk = {}
@@ -54,7 +53,7 @@ module RubyClobClient
           api_passphrase: creds_raw["passphrase"]
         )
       else
-        @logger.error("Couldn't create CLOB creds: #{response.body}")
+        raise "Couldn't create CLOB creds: #{response.body}"
         nil
       end
     end
@@ -76,7 +75,7 @@ module RubyClobClient
           api_passphrase: creds_raw["passphrase"]
         )
       else
-        @logger.error("Couldn't derive CLOB creds: #{response.body}")
+        raise "Couldn't derive CLOB creds: #{response.body}"
         nil
       end
     end
@@ -106,7 +105,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get API keys: #{response.body}")
+        raise "Couldn't get API keys: #{response.body}"
         nil
       end
     end
@@ -123,7 +122,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get closed only mode: #{response.body}")
+        raise "Couldn't get closed only mode: #{response.body}"
         nil
       end
     end
@@ -140,7 +139,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't delete API key: #{response.body}")
+        raise "Couldn't delete API key: #{response.body}"
         nil
       end
     end
@@ -161,7 +160,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get midpoints: #{response.body}")
+        raise "Couldn't get midpoints: #{response.body}"
         nil
       end
     end
@@ -182,7 +181,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get prices: #{response.body}")
+        raise "Couldn't get prices: #{response.body}"
         nil
       end
     end
@@ -203,7 +202,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get spreads: #{response.body}")
+        raise "Couldn't get spreads: #{response.body}"
         nil
       end
     end
@@ -217,7 +216,7 @@ module RubyClobClient
         @tick_sizes[token_id] = result["minimum_tick_size"].to_s
         @tick_sizes[token_id]
       else
-        @logger.error("Couldn't get tick size: #{response.body}")
+        raise "Couldn't get tick size: #{response.body}"
         nil
       end
     end
@@ -231,7 +230,7 @@ module RubyClobClient
         @neg_risk[token_id] = result["neg_risk"]
         result["neg_risk"]
       else
-        @logger.error("Couldn't get neg risk: #{response.body}")
+        raise "Couldn't get neg risk: #{response.body}"
         nil
       end
     end
@@ -248,7 +247,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get orders: #{response.body}")
+        raise "Couldn't get orders: #{response.body}"
         nil
       end
     end
@@ -259,7 +258,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get order book: #{response.body}")
+        raise "Couldn't get order book: #{response.body}"
         nil
       end
     end
@@ -275,7 +274,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get order books: #{response.body}")
+        raise "Couldn't get order books: #{response.body}"
         nil
       end
     end
@@ -293,7 +292,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get order: #{response.body}")
+        raise "Couldn't get order: #{response.body}"
         nil
       end
     end
@@ -310,7 +309,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get trades: #{response.body}")
+        raise "Couldn't get trades: #{response.body}"
         nil
       end
     end
@@ -321,7 +320,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get last trade price: #{response.body}")
+        raise "Couldn't get last trade price: #{response.body}"
         nil
       end
     end
@@ -337,7 +336,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get last trades prices: #{response.body}")
+        raise "Couldn't get last trades prices: #{response.body}"
         nil
       end
     end
@@ -374,7 +373,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't post orders: #{response.body}")
+        raise "Couldn't post orders: #{response.body}"
         nil
       end
     end
@@ -393,7 +392,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't post order: #{response.body}")
+        raise "Couldn't post order: #{response.body}"
         nil
       end
     end
@@ -417,7 +416,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't cancel order: #{response.body}")
+        raise "Couldn't cancel order: #{response.body}"
         nil
       end
     end
@@ -436,7 +435,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't cancel orders: #{response.body}")
+        raise "Couldn't cancel orders: #{response.body}"
         nil
       end
     end
@@ -453,7 +452,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't cancel all orders: #{response.body}")
+        raise "Couldn't cancel all orders: #{response.body}"
         nil
       end
     end
@@ -472,7 +471,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't cancel market orders: #{response.body}")
+        raise "Couldn't cancel market orders: #{response.body}"
         nil
       end
     end
@@ -489,7 +488,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get notifications: #{response.body}")
+        raise "Couldn't get notifications: #{response.body}"
         nil
       end
     end
@@ -506,7 +505,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't drop notifications: #{response.body}")
+        raise "Couldn't drop notifications: #{response.body}"
         nil
       end
     end
@@ -523,7 +522,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get balance allowance: #{response.body}")
+        raise "Couldn't get balance allowance: #{response.body}"
         nil
       end
     end
@@ -540,7 +539,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't update balance allowance: #{response.body}")
+        raise "Couldn't update balance allowance: #{response.body}"
         nil
       end
     end
@@ -557,7 +556,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't check if order is scoring: #{response.body}")
+        raise "Couldn't check if order is scoring: #{response.body}"
         nil
       end
     end
@@ -576,7 +575,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't check if orders are scoring: #{response.body}")
+        raise "Couldn't check if orders are scoring: #{response.body}"
         nil
       end
     end
@@ -587,7 +586,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get sampling markets: #{response.body}")
+        raise "Couldn't get sampling markets: #{response.body}"
         nil
       end
     end
@@ -598,7 +597,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get sampling simplified markets: #{response.body}")
+        raise "Couldn't get sampling simplified markets: #{response.body}"
         nil
       end
     end
@@ -609,7 +608,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get markets: #{response.body}")
+        raise "Couldn't get markets: #{response.body}"
         nil
       end
     end
@@ -620,7 +619,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get simplified markets: #{response.body}")
+        raise "Couldn't get simplified markets: #{response.body}"
         nil
       end
     end
@@ -631,7 +630,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get market: #{response.body}")
+        raise "Couldn't get market: #{response.body}"
         nil
       end
     end
@@ -642,7 +641,7 @@ module RubyClobClient
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        @logger.error("Couldn't get market trades events: #{response.body}")
+        raise "Couldn't get market trades events: #{response.body}"
         nil
       end
     end

@@ -15,21 +15,8 @@ If bundler is not being used to manage dependencies, install the gem by executin
 ### Requisites
 
 #### Allowances
-Adjusting and setting allowances is only required when using an EOA or a web3 wallet like MetaMask. If you sign in with a Magic link or email login, allowances are automatically configured for you during account creation.
 
-If you are interacting with the API with an EOA or web3/MetaMask wallet then correct token allowances must be set before orders can be placed. 
-The following mainnet (Polygon) allowances should be set by the funding (maker) address. For additional documentation please refer to the [API documentation](https://polymarket.github.io/slate-docs/#introduction).
-
-|                   token(s)                   |                   spender                    |                                  description                                   |
-| :------------------------------------------: | :------------------------------------------: | :----------------------------------------------------------------------------: |
-| `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174` | `0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E` |            allow the CTF Exchange contract to transfer user's usdc             |
-| `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174` | `0xC5d563A36AE78145C45a50134d48A1215220f80a` |        allow the Neg Risk CTF Exchange contract to transfer user's usdc        |
-| `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174` | `0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296` |          allow the Neg Risk Adapter contract to transfer user's usdc           |
-| `0x4D97DCd97eC945f40cF65F87097ACe5EA0476045` | `0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E` |     allow the CTF Exchange contract to transfer user's conditional tokens      |
-| `0x4D97DCd97eC945f40cF65F87097ACe5EA0476045` | `0xC5d563A36AE78145C45a50134d48A1215220f80a` | allow the Neg Risk CTF Exchange contract to transfer user's conditional tokens |
-| `0x4D97DCd97eC945f40cF65F87097ACe5EA0476045` | `0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296` |   allow the Neg Risk Adapter contract to transfer user's conditional tokens    |
-
-See [this gist](https://gist.github.com/poly-rodr/44313920481de58d5a3f6d1f8226bd5e) for a an example of how to set these allowances for an account using python.
+See guidance on [py-clob-client](https://github.com/Polymarket/py-clob-client).
 
 ### Usage
 

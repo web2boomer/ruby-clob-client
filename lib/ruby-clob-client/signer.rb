@@ -14,7 +14,7 @@ module RubyClobClient
     end
 
     def address
-      @key.address
+      @key.address.to_s
     end
 
     def get_chain_id
