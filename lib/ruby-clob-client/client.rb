@@ -166,7 +166,7 @@ module RubyClobClient
     end
 
     def get_price(token_id, side)
-      uri = URI.parse("#{@host}#{Endpoints::price}?token_id=#{token_id}&side=#{side}")
+      uri = URI.parse("#{@host}#{Endpoints::PRICE}?token_id=#{token_id}&side=#{side}")
       Net::HTTP.get_response(uri)
     end
 

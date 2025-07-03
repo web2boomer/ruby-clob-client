@@ -29,7 +29,7 @@ module RubyClobClient
 
       def self.sign_order_message(signer, order_fields)
         domain = get_clob_auth_domain(signer.chain_id)
-        order_struct = RubyClobClient::Signing::Model::OrderStruct.new(**order_fields)
+        order_struct = RubyClobClient::Signing::OrderStruct.new(**order_fields)
         hash = order_struct.signable_bytes(domain)
         signer.sign(hash.unpack1('H*').prepend('0x'))
       end
