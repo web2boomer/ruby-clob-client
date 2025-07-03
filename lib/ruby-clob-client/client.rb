@@ -37,12 +37,12 @@ module RubyClobClient
     end
 
     def create_api_key(nonce: nil)
-      nonce ||= SecureRandom.random_number(2**64) # generate random nonce if none passed
       endpoint = "#{@host}#{Endpoints::CREATE_API_KEY}"
       headers = RubyClobClient::Headers.create_level_1_headers(@signer, nonce)
       uri = URI.parse(endpoint)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == 'https'
+      ap headers
       request = Net::HTTP::Post.new(uri.request_uri, headers)
       response = http.request(request)
       if response.is_a?(Net::HTTPSuccess)

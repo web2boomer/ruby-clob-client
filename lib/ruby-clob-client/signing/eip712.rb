@@ -13,13 +13,13 @@ module RubyClobClient
 
       def self.sign_clob_auth_message(signer, timestamp, nonce)
         domain = get_clob_auth_domain(signer.chain_id)
-        ap domain
         clob_auth = RubyClobClient::Signing::ClobAuth.new(
           address: signer.address,
           timestamp: timestamp.to_i,  
           nonce: nonce.to_i,             
           message: MSG_TO_SIGN
         )
+        ap clob_auth
         hash = clob_auth.signable_bytes(domain)  
         # p "hash is #{hash}"
         signature = signer.sign(hash)  

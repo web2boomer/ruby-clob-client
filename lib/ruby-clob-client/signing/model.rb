@@ -20,7 +20,7 @@ module RubyClobClient
       end
 
       def self.encode_string(str)
-        keccak256(str)
+        keccak256(str) # ensure string
       end
 
       def self.domain_separator_hash(domain)
@@ -43,11 +43,11 @@ module RubyClobClient
         @message = message
       end
 
-      TYPE_HASH = Model.keccak256("ClobAuth(address address,uint256 timestamp,uint256 nonce,string message)")
+      TYPE_HASH = Model.keccak256("ClobAuth(address address,string timestamp,uint256 nonce,string message)")
 
       def signable_bytes(domain)
         address_enc    = Model.encode_address(@address)
-        timestamp_enc  = Model.encode_uint256(@timestamp)
+        timestamp_enc  = Model.encode_string(@timestamp.to_s)
         nonce_enc      = Model.encode_uint256(@nonce)
         message_hash   = Model.encode_string(@message)
 
@@ -56,6 +56,20 @@ module RubyClobClient
 
         domain_separator = Model.domain_separator_hash(domain)
         to_sign = "\x19\x01" + domain_separator + struct_hash
+        puts "==== SIGNATURE DEBUG ===="
+        puts "address:         #{@address}"
+        puts "timestamp:       #{@timestamp}"
+        puts "timestamp:       #{@timestamp} (#{Time.at(@timestamp.to_i).to_fs})"
+        puts "nonce:           #{@nonce}"
+        puts "message:         #{@message}"
+        puts "address_enc:     0x#{Model.encode_address(@address).unpack1('H*')}"
+        puts "timestamp_enc:   0x#{Model.encode_string(@timestamp.to_s).unpack1('H*')}"
+        puts "nonce_enc:       0x#{Model.encode_uint256(@nonce).unpack1('H*')}"
+        puts "message_hash:    0x#{Model.encode_string(@message).unpack1('H*')}"
+        puts "TYPE_HASH:       0x#{TYPE_HASH.unpack1('H*')}"
+        puts "struct_hash:     0x#{struct_hash.unpack1('H*')}"
+        puts "domain_separator:0x#{domain_separator.unpack1('H*')}"
+        puts "final_digest:    0x#{Model.keccak256(to_sign).unpack1('H*')}"          
         Model.keccak256(to_sign)
       end
     end
