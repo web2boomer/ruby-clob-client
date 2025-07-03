@@ -209,7 +209,7 @@ module RubyClobClient
 
     def get_tick_size(token_id)
       return @tick_sizes[token_id] if @tick_sizes.key?(token_id)
-      uri = URI.parse("#{@host}/get_tick_size?token_id=#{token_id}")
+      uri = URI.parse("#{@host}/tick-size?token_id=#{token_id}")
       response = Net::HTTP.get_response(uri)
       if response.is_a?(Net::HTTPSuccess)
         result = JSON.parse(response.body)
@@ -223,7 +223,7 @@ module RubyClobClient
 
     def get_neg_risk(token_id)
       return @neg_risk[token_id] if @neg_risk.key?(token_id)
-      uri = URI.parse("#{@host}/get_neg_risk?token_id=#{token_id}")
+      uri = URI.parse("#{@host}/neg-risk?token_id=#{token_id}")
       response = Net::HTTP.get_response(uri)
       if response.is_a?(Net::HTTPSuccess)
         result = JSON.parse(response.body)
@@ -253,7 +253,7 @@ module RubyClobClient
     end
 
     def get_order_book(token_id)
-      uri = URI.parse("#{@host}/get_order_book?token_id=#{token_id}")
+      uri = URI.parse("#{@host}/book?token_id=#{token_id}")
       response = Net::HTTP.get_response(uri)
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
@@ -264,7 +264,7 @@ module RubyClobClient
     end
 
     def get_order_books(params)
-      uri = URI.parse("#{@host}/get_order_books")
+      uri = URI.parse("#{@host}/books")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == 'https'
       request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
