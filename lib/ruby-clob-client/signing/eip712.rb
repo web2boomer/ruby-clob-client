@@ -15,7 +15,7 @@ module RubyClobClient
         domain = get_clob_auth_domain(signer.chain_id)
         clob_auth = RubyClobClient::Signing::ClobAuth.new(
           address: signer.address,
-          timestamp: timestamp.to_i,  
+          timestamp: timestamp.to_i, 
           nonce: nonce.to_i,             
           message: MSG_TO_SIGN
         )

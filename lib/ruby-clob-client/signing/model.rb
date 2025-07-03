@@ -48,7 +48,7 @@ module RubyClobClient
       def signable_bytes(domain)
         address_enc    = Model.encode_address(@address)
         timestamp_enc  = Model.encode_string(@timestamp.to_s)
-        nonce_enc      = Model.encode_uint256(@nonce)
+        nonce_enc      = Model.encode_uint256(@nonce.to_i)
         message_hash   = Model.encode_string(@message)
 
         packed = TYPE_HASH + address_enc + timestamp_enc + nonce_enc + message_hash

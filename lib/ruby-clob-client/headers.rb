@@ -12,7 +12,7 @@ module RubyClobClient
     POLY_PASSPHRASE = 'POLY_PASSPHRASE'
 
     def self.create_level_1_headers(signer, nonce = nil)
-      timestamp = Time.now.utc.to_i
+      timestamp = Time.now.to_i
       signature = RubyClobClient::Signing::EIP712.sign_clob_auth_message(signer, timestamp, nonce)
       {
         POLY_ADDRESS => signer.address,
