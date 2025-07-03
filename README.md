@@ -1,6 +1,8 @@
-# ruby-clob-client - Work in progress!!!
+# ruby-clob-client
 
 Ruby client for the Polymarket CLOB. Full API documentation can be found [here](https://docs.polymarket.com/developers/dev-resources/main). Ported from [py-clob-client](https://github.com/Polymarket/py-clob-client).
+
+It's a work in progress, not every part of the client has been tested. But you can place orders so wen lambo? 
 
 ### Installation
 

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'time'
+require_relative 'signing/eip712'
 
 module RubyClobClient
   module Headers
@@ -12,13 +13,12 @@ module RubyClobClient
 
     def self.create_level_1_headers(signer, nonce = nil)
       timestamp = Time.now.to_i
-      n = nonce || 0
-      signature = 'stub_signature' # TODO: Implement EIP712 signing
+      signature = RubyClobClient::Signing::EIP712.sign_clob_auth_message(signer, timestamp, nonce)
       {
         POLY_ADDRESS => signer.address,
         POLY_SIGNATURE => signature,
         POLY_TIMESTAMP => timestamp.to_s,
-        POLY_NONCE => n.to_s
+        POLY_NONCE => nonce.to_s
       }
     end
 

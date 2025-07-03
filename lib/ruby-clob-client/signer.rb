@@ -22,10 +22,9 @@ module RubyClobClient
     end
 
     def sign(message_hash)
-      # message_hash should be a hex string ("0x...") or binary string
-      hash = message_hash.start_with?("0x") ? [message_hash[2..]].pack('H*') : message_hash
-      sig = Eth::Key.personal_sign(hash, @key)
-      sig.unpack1('H*').prepend('0x')
+      sig = @key.sign(message_hash)  # expects 32-byte binary
+      '0x' + sig.unpack1('H*')
     end
+    
   end
 end 

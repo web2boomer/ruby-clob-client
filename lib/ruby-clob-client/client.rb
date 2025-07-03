@@ -37,7 +37,7 @@ module RubyClobClient
     end
 
     def create_api_key(nonce: nil)
-      # TODO: Implement assert_level_1_auth
+      nonce ||= SecureRandom.random_number(2**64) # generate random nonce if none passed
       endpoint = "#{@host}#{Endpoints::CREATE_API_KEY}"
       headers = RubyClobClient::Headers.create_level_1_headers(@signer, nonce)
       uri = URI.parse(endpoint)
