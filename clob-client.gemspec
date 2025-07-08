@@ -3,7 +3,7 @@
 require_relative "lib/clob-client/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "ClobClient"
+  spec.name = "clob-client"
   spec.version = ClobClient::VERSION
   spec.authors = ["Alex O'Byrne"]
   spec.email = ["alex@aob.io"]

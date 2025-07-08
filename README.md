@@ -8,11 +8,11 @@ It's a work in progress, not every part of the client has been tested. But you c
 
 Install the gem and add to the application's Gemfile by executing:
 
-    $ bundle add 'ClobClient'
+    $ bundle add 'ruby-clob-client'
 
 If bundler is not being used to manage dependencies, install the gem by executing:
 
-    $ gem install 'ClobClient'
+    $ gem install 'ruby-clob-client'
 
 ### Requisites
 
