@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "lib/ruby-clob-client/version"
+require_relative "lib/clob-client/version"
 
 Gem::Specification.new do |spec|
   spec.name = "ClobClient"
