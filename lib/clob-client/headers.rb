@@ -13,10 +13,8 @@ module ClobClient
     POLY_PASSPHRASE = 'POLY_PASSPHRASE'
 
     def self.create_level_1_headers(signer, nonce = nil)
-      # timestamp = Time.now.to_i
-      timestamp = 1751978273
-      signature = RubyClobClient::Signing::EIP712.sign_clob_auth_message(signer, timestamp, nonce)
-      # signature = '0x4e0d98e2f711669895ad08dd55bb2d00028f3235cae78e53ff6bc6c6bee2e9bc2c36659ead0968dea800f0ef3f6f16535f7dd7a4ae4c7f222c17d88ece88b3191c'
+      timestamp = Time.now.to_i
+      signature = ClobClient::Signing::EIP712.sign_clob_auth_message(signer, timestamp, nonce)
       {
         POLY_ADDRESS => signer.address,
         POLY_SIGNATURE => signature,
@@ -27,8 +25,7 @@ module ClobClient
 
     def self.create_level_2_headers(signer, creds, request_args)
       timestamp = Time.now.to_i
-      timestamp = 1751932804
-      hmac_sig = RubyClobClient::Signing::HMAC.build_hmac_signature(
+      hmac_sig = ClobClient::Signing::HMAC.build_hmac_signature(
         creds.api_secret,
         timestamp.to_s,
         request_args.method,

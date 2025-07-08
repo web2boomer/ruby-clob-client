@@ -13,7 +13,7 @@ module ClobClient
       end
 
       def self.get_clob_auth_domain(chain_id)
-        # config = RubyClobClient::Config.get_contract_config(chain_id)
+        # config = ClobClient::Config.get_contract_config(chain_id)
         { 
           name: CLOB_DOMAIN_NAME, 
           version: CLOB_VERSION, 
@@ -25,7 +25,7 @@ module ClobClient
       def self.sign_clob_auth_message(signer, timestamp, nonce)
         domain = get_clob_auth_domain(signer.get_chain_id)
 
-        clob_auth = RubyClobClient::Signing::ClobAuth.new(
+        clob_auth = ClobClient::Signing::ClobAuth.new(
           address: signer.address,
           timestamp: timestamp.to_s, 
           nonce: nonce.to_i,             
@@ -44,9 +44,9 @@ module ClobClient
       
       def self.sign_order_message(signer, order_fields)
         domain = get_clob_auth_domain(signer.get_chain_id)
-        order_struct = RubyClobClient::Signing::OrderStruct.new(**order_fields)
+        order_struct = ClobClient::Signing::OrderStruct.new(**order_fields)
         signable_data = order_struct.signable_bytes(domain)
-        order_struct_hash = RubyClobClient::Signing::Model.keccak256(signable_data)
+        order_struct_hash = ClobClient::Signing::Model.keccak256(signable_data)
         p "order hash (binary, for signing) is #{order_struct_hash.unpack1('H*')}"
         signature = signer.sign(order_struct_hash)
         signature = prepend_zx signature
