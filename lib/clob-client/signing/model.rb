@@ -84,22 +84,6 @@ module ClobClient
         # 5. Compute the EIP-712 digest
         digest = Model.create_eip712_digest(domain_separator, struct_hash)
 
-        # Optional: debug output (can be commented out)
-        # puts "==== SIGNATURE DEBUG ===="
-        puts "address:         #{@address}"
-        puts "timestamp:       #{@timestamp}"
-        puts "nonce:           #{@nonce}"
-        puts "message:         #{@message}"
-        puts "address_enc:     #{address_enc.unpack1('H*')}"
-        puts "timestamp_enc:   #{timestamp_enc.unpack1('H*')}"
-        puts "nonce_enc:       #{nonce_enc.unpack1('H*')}"
-        puts "message_enc:     #{message_enc.unpack1('H*')}"
-        puts "TYPE_HASH:       #{TYPE_HASH.unpack1('H*')}"
-        puts "struct_hash:     #{struct_hash.unpack1('H*')}"
-        puts "domain_separator:#{domain_separator.unpack1('H*')}"
-        puts "digest:          #{digest.unpack1('H*')}"
-        puts "domain:          #{domain.inspect}"
-
         digest
       end
     end

@@ -39,7 +39,6 @@ module ClobClient
     def create_api_key(nonce: nil)
       endpoint = "#{@host}#{Endpoints::CREATE_API_KEY}"
       headers = ClobClient::Headers.create_level_1_headers(@signer, nonce)
-      ap headers
       uri = URI.parse(endpoint)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
@@ -62,12 +61,10 @@ module ClobClient
       # TODO: Implement assert_level_1_auth
       endpoint = "#{@host}#{Endpoints::DERIVE_API_KEY}"
       headers = ClobClient::Headers.create_level_1_headers(@signer, nonce)
-      puts "Derive API key headers: #{headers.inspect}"
       uri = URI.parse(endpoint)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
       request = Net::HTTP::Get.new(uri.request_uri, headers)
-      puts "Request headers: #{headers.inspect}"
       response = http.request(request)
       if response.is_a?(Net::HTTPSuccess)
         creds_raw = JSON.parse(response.body)

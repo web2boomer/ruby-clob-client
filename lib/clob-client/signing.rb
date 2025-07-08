@@ -81,19 +81,6 @@ module ClobClient
         struct_hash = Model.keccak256(packed)
         domain_separator = Model.domain_separator_hash(domain)
         digest = Model.create_eip712_digest(domain_separator, struct_hash)
-        puts "address:         #{@address}"
-        puts "timestamp:       #{@timestamp}"
-        puts "nonce:           #{@nonce}"
-        puts "message:         #{@message}"
-        puts "address_enc:     #{address_enc.unpack1('H*')}"
-        puts "timestamp_enc:   #{timestamp_enc.unpack1('H*')}"
-        puts "nonce_enc:       #{nonce_enc.unpack1('H*')}"
-        puts "message_enc:     #{message_enc.unpack1('H*')}"
-        puts "TYPE_HASH:       #{TYPE_HASH.unpack1('H*')}"
-        puts "struct_hash:     #{struct_hash.unpack1('H*')}"
-        puts "domain_separator:#{domain_separator.unpack1('H*')}"
-        puts "digest:          #{digest.unpack1('H*')}"
-        puts "domain:          #{domain.inspect}"
         digest
       end
     end
@@ -167,11 +154,8 @@ module ClobClient
           message: MSG_TO_SIGN
         )
         signable_data = clob_auth.signable_bytes(domain)
-        puts "signable_data: #{signable_data.unpack1('H*')}"
         signature = signer.sign(signable_data)
-        p "raw signature from signer: #{signature}"
         signature = prepend_zx signature
-        p "clob auth signature is #{signature}"
         signature
       end
       
@@ -180,10 +164,8 @@ module ClobClient
         order_struct = ClobClient::Signing::OrderStruct.new(**order_fields)
         signable_data = order_struct.signable_bytes(domain)
         order_struct_hash = ClobClient::Signing::Model.keccak256(signable_data)
-        p "order hash (binary, for signing) is #{order_struct_hash.unpack1('H*')}"
         signature = signer.sign(order_struct_hash)
         signature = prepend_zx signature
-        p "order signature is #{signature}"
         signature        
       end
     end

@@ -34,11 +34,8 @@ module ClobClient
 
         # Strict EIP-712: sign the digest directly
         signable_data = clob_auth.signable_bytes(domain)
-        puts "signable_data: #{signable_data.unpack1('H*')}"
         signature = signer.sign(signable_data)
-        p "raw signature from signer: #{signature}"
         signature = prepend_zx signature
-        p "clob auth signature is #{signature}"
         signature
       end
       
@@ -47,10 +44,8 @@ module ClobClient
         order_struct = ClobClient::Signing::OrderStruct.new(**order_fields)
         signable_data = order_struct.signable_bytes(domain)
         order_struct_hash = ClobClient::Signing::Model.keccak256(signable_data)
-        p "order hash (binary, for signing) is #{order_struct_hash.unpack1('H*')}"
         signature = signer.sign(order_struct_hash)
         signature = prepend_zx signature
-        p "order signature is #{signature}"
         signature        
       end
     end
