@@ -25,7 +25,7 @@ module ClobClient
     end
 
     def self.order_to_json(order, owner, order_type)
-      { order: order.respond_to?(:to_h) ? order.to_h : order, owner: owner, orderType: order_type }
+      { order: order.to_h, owner: owner, orderType: order_type }
     end
 
     def self.is_tick_size_smaller(a, b)

@@ -128,14 +128,14 @@ module ClobClient
       order_fields = {
         maker: @funder,
         taker: order_args.taker,
-        token_id: order_args.token_id,
-        maker_amount: maker_amount.to_s,
-        taker_amount: taker_amount.to_s,
+        token_id: order_args.token_id.to_i,
+        maker_amount: maker_amount,
+        taker_amount: taker_amount,
         side: side,
-        fee_rate_bps: order_args.fee_rate_bps.to_s,
-        nonce: order_args.nonce.to_s,
+        fee_rate_bps: 0,
+        nonce: order_args.nonce,
         signer: @signer.address,
-        expiration: order_args.expiration.to_s,
+        expiration: order_args.expiration,
         signature_type: @sig_type || 'EOA'
       }
       signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields)
@@ -161,8 +161,8 @@ module ClobClient
         maker: @funder,
         taker: order_args.taker,
         token_id: order_args.token_id,
-        maker_amount: maker_amount.to_s,
-        taker_amount: taker_amount.to_s,
+        maker_amount: maker_amount,
+        taker_amount: taker_amount,
         side: side,
         fee_rate_bps: order_args.fee_rate_bps.to_s,
         nonce: order_args.nonce.to_s,

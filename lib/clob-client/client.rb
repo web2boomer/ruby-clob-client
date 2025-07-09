@@ -384,7 +384,7 @@ module ClobClient
       assert_level_2_auth
       
       # Serialize orders using order_to_json utility
-      body = args.map { |arg| ClobClient::Utilities.order_to_json(arg.order, @signer.address, ClobClient::OrderType::GTC) }
+      body = args.map { |arg| ClobClient::Utilities.order_to_json(arg.order, @creds.api_key, ClobClient::OrderType::GTC) }
       
       request_args = ClobClient::RequestArgs.new(method: 'POST', request_path: Endpoints::POST_ORDERS, body: body)
       headers = ClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
@@ -406,13 +406,13 @@ module ClobClient
       assert_level_2_auth
       
       # Serialize order using order_to_json utility
-      body = ClobClient::Utilities.order_to_json(order, @signer.address, order_type)
+      body = ClobClient::Utilities.order_to_json(order, @creds.api_key, order_type)
       
-      request_args = ClobClient::RequestArgs.new(method: 'POST', request_path:  Endpoints::POST_ORDERS, body: body)
+      request_args = ClobClient::RequestArgs.new(method: 'POST', request_path:  Endpoints::POST_ORDER, body: body)
       headers = ClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
       uri = URI.parse("#{@host}#{Endpoints::POST_ORDERS}")
       http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.scheme == 'https'
+      http.use_ssl = true
       request = Net::HTTP::Post.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
       request.body = body.to_json
       response = http.request(request)

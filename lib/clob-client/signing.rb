@@ -107,7 +107,7 @@ module ClobClient
       def signable_bytes(domain)
         maker_enc       = Model.encode_address(@maker)
         taker_enc       = Model.encode_address(@taker)
-        token_id_enc    = Model.encode_address(@token_id)
+        token_id_enc    = Model.encode_uint256(@token_id)
         maker_amt_enc   = Model.encode_uint256(@maker_amount)
         taker_amt_enc   = Model.encode_uint256(@taker_amount)
         side_hash       = Model.encode_string(@side)

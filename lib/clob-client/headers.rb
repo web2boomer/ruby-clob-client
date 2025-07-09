@@ -27,7 +27,7 @@ module ClobClient
       timestamp = Time.now.to_i
       hmac_sig = ClobClient::Signing::HMAC.build_hmac_signature(
         creds.api_secret,
-        timestamp.to_s,
+        timestamp,
         request_args.method,
         request_args.request_path,
         request_args.body
