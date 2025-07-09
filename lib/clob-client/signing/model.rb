@@ -108,9 +108,22 @@ module ClobClient
       TYPE_HASH = Model.keccak256("Order(address maker,address taker,address token_id,uint256 maker_amount,uint256 taker_amount,string side,uint256 fee_rate_bps,uint256 nonce,address signer,uint256 expiration,string signature_type)")
 
       def signable_bytes(domain)
+        puts "OrderStruct values before encoding:"
+        puts "  maker: #{@maker.inspect}"
+        puts "  taker: #{@taker.inspect}"
+        puts "  token_id: #{@token_id.inspect}"
+        puts "  maker_amount: #{@maker_amount.inspect}"
+        puts "  taker_amount: #{@taker_amount.inspect}"
+        puts "  side: #{@side.inspect}"
+        puts "  fee_rate_bps: #{@fee_rate_bps.inspect}"
+        puts "  nonce: #{@nonce.inspect}"
+        puts "  signer: #{@signer.inspect}"
+        puts "  expiration: #{@expiration.inspect}"
+        puts "  signature_type: #{@signature_type.inspect}"
+
         maker_enc       = Model.encode_address(@maker)
         taker_enc       = Model.encode_address(@taker)
-        token_id_enc    = Model.encode_address(@token_id)
+        token_id_enc    = Model.encode_uint256(@token_id)
         maker_amt_enc   = Model.encode_uint256(@maker_amount)
         taker_amt_enc   = Model.encode_uint256(@taker_amount)
         side_hash       = Model.encode_string(@side)

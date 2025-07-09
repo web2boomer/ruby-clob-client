@@ -140,20 +140,9 @@ module ClobClient
       }
       signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields)
 
-      order_data = {
-        maker: @funder,
-        taker: order_args.taker,
-        token_id: order_args.token_id,
-        maker_amount: maker_amount.to_s,
-        taker_amount: taker_amount.to_s,
-        side: side,
-        fee_rate_bps: order_args.fee_rate_bps.to_s,
-        nonce: order_args.nonce.to_s,
-        signer: @signer.address,
-        expiration: order_args.expiration.to_s,
-        signature_type: @sig_type || 'EOA',
-        signature: signature
-      }
+      # This is the same as order_fields, but with the signature added.
+      order_data = order_fields.merge(signature: signature)
+
       order_data
     end
 
@@ -183,20 +172,9 @@ module ClobClient
       }
       signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields)
 
-      order_data = {
-        maker: @funder,
-        taker: order_args.taker,
-        token_id: order_args.token_id,
-        maker_amount: maker_amount.to_s,
-        taker_amount: taker_amount.to_s,
-        side: side,
-        fee_rate_bps: order_args.fee_rate_bps.to_s,
-        nonce: order_args.nonce.to_s,
-        signer: @signer.address,
-        expiration: '0',
-        signature_type: @sig_type || 'EOA',
-        signature: signature
-      }
+      # This is the same as order_fields, but with the signature added.
+      order_data = order_fields.merge(signature: signature)
+
       order_data
     end
   end
