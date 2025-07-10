@@ -39,8 +39,8 @@ module ClobClient
         signature
       end
       
-      def self.sign_order_message(signer, order_fields)
-        domain = get_clob_auth_domain(signer.get_chain_id)
+      def self.sign_order_message(signer, order_fields, domain = nil)
+        domain ||= get_clob_auth_domain(signer.get_chain_id)
         order_struct = ClobClient::Signing::OrderStruct.new(**order_fields)
         signable_data = order_struct.signable_bytes(domain)
         order_struct_hash = ClobClient::Signing::Model.keccak256(signable_data)

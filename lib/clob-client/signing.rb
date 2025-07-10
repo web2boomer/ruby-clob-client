@@ -10,8 +10,8 @@ module ClobClient
     module HMAC
       def self.build_hmac_signature(secret, timestamp, method, request_path, body = nil)
         base64_secret = Base64.urlsafe_decode64(secret)
-        message = "#{timestamp}#{method}#{request_path}"
-        message += body.to_s.gsub("'", '"') if body
+        normalized_body = body ? body : ""
+        message = "#{timestamp}#{method.upcase}#{request_path}#{normalized_body}"
         hmac = OpenSSL::HMAC.digest('sha256', base64_secret, message.encode('UTF-8'))
         Base64.urlsafe_encode64(hmac)
       end

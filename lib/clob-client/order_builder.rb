@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'bigdecimal'
+require_relative 'config'
 
 module ClobClient
   module OrderBuilderConstants
@@ -116,6 +117,7 @@ module ClobClient
 
     def create_order(order_args, options)
       tick_size = options[:tick_size]
+      neg_risk = options[:neg_risk]
       round_config = ROUNDING_CONFIG[tick_size]
       side, maker_amount, taker_amount = get_order_amounts(
         order_args.side,
@@ -124,24 +126,52 @@ module ClobClient
         round_config
       )
 
+      # Get contract config for domain (for verifyingContract)
+      chain_id = @signer.get_chain_id if @signer.respond_to?(:get_chain_id)
+      contract_config = nil
+      if chain_id
+        contract_config = ClobClient::Config.get_contract_config(chain_id, neg_risk)
+      end
+
       # Create order fields for EIP712 signing
       order_fields = {
         maker: @funder,
         taker: order_args.taker,
         token_id: order_args.token_id.to_i,
-        maker_amount: maker_amount,
-        taker_amount: taker_amount,
+        maker_amount: maker_amount.to_i,
+        taker_amount: taker_amount.to_i,
         side: side,
-        fee_rate_bps: 0,
-        nonce: order_args.nonce,
+        fee_rate_bps: order_args.fee_rate_bps.to_i,
+        nonce: order_args.nonce.to_i,
         signer: @signer.address,
-        expiration: order_args.expiration,
+        expiration: order_args.expiration.to_i,
         signature_type: @sig_type || 'EOA'
       }
-      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields)
+
+      # Build EIP712 domain with verifyingContract if available
+      domain = if contract_config
+        {
+          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
+          version: ClobClient::Signing::EIP712::CLOB_VERSION,
+          chainId: chain_id,
+          verifyingContract: contract_config.exchange
+        }
+      else
+        ClobClient::Signing::EIP712.get_clob_auth_domain(chain_id)
+      end
+
+      p "domain"
+      ap domain
+
+      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields, domain)
+
+      p "signature"
+      ap signature
 
       # This is the same as order_fields, but with the signature added.
       order_data = order_fields.merge(signature: signature)
+
+      ap order_data
 
       order_data
     end

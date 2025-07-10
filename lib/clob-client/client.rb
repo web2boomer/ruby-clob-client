@@ -351,7 +351,7 @@ module ClobClient
       end
       
       neg_risk = options&.neg_risk || get_neg_risk(order_args.token_id)
-      
+
       # Create order using builder
       @order_builder.create_order(order_args, { tick_size: tick_size, neg_risk: neg_risk })
     end
