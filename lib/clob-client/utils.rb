@@ -10,7 +10,7 @@ module ClobClient
     L1 = 1
     L2 = 2
 
-    CREDENTIAL_CREATION_WARNING = """[31m[31m[31m\nYour credentials CANNOT be recovered after they've been created.\nBe sure to store them safely!\n[31m[31m[31m"""
+    CREDENTIAL_CREATION_WARNING = """🚨🚨🚨\nYour credentials CANNOT be recovered after they've been created.\nBe sure to store them safely!\n🚨🚨🚨"""
 
     L1_AUTH_UNAVAILABLE = 'A private key is needed to interact with this endpoint!'
     L2_AUTH_UNAVAILABLE = 'API Credentials are needed to interact with this endpoint!'
@@ -95,6 +95,27 @@ module ClobClient
 
     def self.price_valid(price, tick_size)
       price >= tick_size.to_f && price <= 1 - tick_size.to_f
+    end
+
+    def self.normalize_address(address)
+      # Convert address to checksum format
+      # Note: This is a simplified version - you might want to use eth_utils equivalent
+      address.downcase
+    end
+
+    def self.prepend_zx(in_str)
+      # Prepend 0x to the input string if it is missing
+      s = in_str.to_s
+      if s.length > 2 && s[0..1] != "0x"
+        s = "0x#{s}"
+      end
+      s
+    end
+
+    def self.generate_seed
+      # Pseudo random seed based on timestamp
+      now = Time.now.utc.to_f
+      (now * rand).round
     end
   end
 

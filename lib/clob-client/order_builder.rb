@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 require 'bigdecimal'
+require 'securerandom'
 require_relative 'config'
 
 module ClobClient
   module OrderBuilderConstants
     BUY = 'BUY'
     SELL = 'SELL'
+    BUY_SIDE = 0
+    SELL_SIDE = 1
   end
 
   module OrderBuilderHelpers
@@ -29,6 +32,11 @@ module ClobClient
 
     def self.decimal_places(x)
       BigDecimal(x.to_s).exponent.abs
+    end
+
+    def self.generate_salt
+      # Generate a unique salt for order entropy
+      SecureRandom.hex(32).to_i(16)
     end
   end
 
@@ -65,7 +73,7 @@ module ClobClient
         end
         maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt)
         taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt)
-        [BUY, maker_amount, taker_amount]
+        [BUY_SIDE, maker_amount, taker_amount]  # 0 for BUY
       elsif side == SELL
         raw_maker_amt = OrderBuilderHelpers.round_down(size, round_config[:size])
         raw_taker_amt = raw_maker_amt * raw_price
@@ -77,7 +85,7 @@ module ClobClient
         end
         maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt)
         taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt)
-        [SELL, maker_amount, taker_amount]
+        [SELL_SIDE, maker_amount, taker_amount]  # 1 for SELL
       else
         raise ArgumentError, "order_args.side must be '#{BUY}' or '#{SELL}'"
       end
@@ -97,7 +105,7 @@ module ClobClient
         end
         maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt)
         taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt)
-        [BUY, maker_amount, taker_amount]
+        [BUY_SIDE, maker_amount, taker_amount]  # 0 for BUY
       elsif side == SELL
         raw_maker_amt = OrderBuilderHelpers.round_down(amount, round_config[:size])
         raw_taker_amt = raw_maker_amt * raw_price
@@ -109,7 +117,7 @@ module ClobClient
         end
         maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt)
         taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt)
-        [SELL, maker_amount, taker_amount]
+        [SELL_SIDE, maker_amount, taker_amount]  # 1 for SELL
       else
         raise ArgumentError, "order_args.side must be '#{BUY}' or '#{SELL}'"
       end
@@ -126,6 +134,9 @@ module ClobClient
         round_config
       )
 
+      # Generate salt for order uniqueness
+      salt = OrderBuilderHelpers.generate_salt
+
       # Get contract config for domain (for verifyingContract)
       chain_id = @signer.get_chain_id if @signer.respond_to?(:get_chain_id)
       contract_config = nil
@@ -133,8 +144,8 @@ module ClobClient
         contract_config = ClobClient::Config.get_contract_config(chain_id, neg_risk)
       end
 
-      # Create order fields for EIP712 signing
-      order_fields = {
+      # Create order data structure
+      order_data = ClobClient::OrderData.new(
         maker: @funder,
         taker: order_args.taker,
         token_id: order_args.token_id.to_i,
@@ -145,19 +156,40 @@ module ClobClient
         nonce: order_args.nonce.to_i,
         signer: @signer.address,
         expiration: order_args.expiration.to_i,
-        signature_type: @sig_type || 'EOA'
+        signature_type: @sig_type || ClobClient::SignatureType::EOA,
+        salt: salt
+      )
+
+      # Create order fields for EIP712 signing (maintaining backward compatibility)
+      order_fields = {
+        maker: order_data.maker,
+        taker: order_data.taker,
+        token_id: order_data.token_id,
+        maker_amount: order_data.maker_amount,
+        taker_amount: order_data.taker_amount,
+        side: order_data.side,
+        fee_rate_bps: order_data.fee_rate_bps,
+        nonce: order_data.nonce,
+        signer: order_data.signer,
+        expiration: order_data.expiration,
+        signature_type: order_data.signature_type,
+        salt: order_data.salt
       }
 
       # Build EIP712 domain with verifyingContract if available
       domain = if contract_config
         {
-          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
+          name: ClobClient::Signing::EIP712::ORDER_DOMAIN_NAME,
           version: ClobClient::Signing::EIP712::CLOB_VERSION,
           chainId: chain_id,
           verifyingContract: contract_config.exchange
         }
       else
-        ClobClient::Signing::EIP712.get_clob_auth_domain(chain_id)
+        {
+          name: ClobClient::Signing::EIP712::ORDER_DOMAIN_NAME,
+          version: ClobClient::Signing::EIP712::CLOB_VERSION,
+          chainId: chain_id
+        }
       end
 
       p "domain"
@@ -177,35 +209,54 @@ module ClobClient
     end
 
     def create_market_order(order_args, options)
-      tick_size = options[:tick_size]
-      round_config = ROUNDING_CONFIG[tick_size]
-      side, maker_amount, taker_amount = get_market_order_amounts(
-        order_args.side,
-        order_args.amount,
-        order_args.price,
-        round_config
-      )
+      # stub to implement
+    end
 
-      # Create order fields for EIP712 signing
+    def create_order_from_data(order_data, options = {})
+      # Get contract config for domain (for verifyingContract)
+      chain_id = @signer.get_chain_id if @signer.respond_to?(:get_chain_id)
+      neg_risk = options[:neg_risk]
+      contract_config = nil
+      if chain_id
+        contract_config = ClobClient::Config.get_contract_config(chain_id, neg_risk)
+      end
+
+      # Build EIP712 domain with verifyingContract if available
+      domain = if contract_config
+        {
+          name: ClobClient::Signing::EIP712::ORDER_DOMAIN_NAME,
+          version: ClobClient::Signing::EIP712::CLOB_VERSION,
+          chainId: chain_id,
+          verifyingContract: contract_config.exchange
+        }
+      else
+        {
+          name: ClobClient::Signing::EIP712::ORDER_DOMAIN_NAME,
+          version: ClobClient::Signing::EIP712::CLOB_VERSION,
+          chainId: chain_id
+        }
+      end
+
+      # Convert OrderData to hash for signing
       order_fields = {
-        maker: @funder,
-        taker: order_args.taker,
-        token_id: order_args.token_id,
-        maker_amount: maker_amount,
-        taker_amount: taker_amount,
-        side: side,
-        fee_rate_bps: order_args.fee_rate_bps.to_s,
-        nonce: order_args.nonce.to_s,
-        signer: @signer.address,
-        expiration: '0',
-        signature_type: @sig_type || 'EOA'
+        maker: order_data.maker,
+        taker: order_data.taker,
+        token_id: order_data.token_id,
+        maker_amount: order_data.maker_amount,
+        taker_amount: order_data.taker_amount,
+        side: order_data.side,
+        fee_rate_bps: order_data.fee_rate_bps,
+        nonce: order_data.nonce,
+        signer: order_data.signer,
+        expiration: order_data.expiration,
+        signature_type: order_data.signature_type,
+        salt: order_data.salt
       }
-      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields)
 
-      # This is the same as order_fields, but with the signature added.
-      order_data = order_fields.merge(signature: signature)
+      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields, domain)
 
-      order_data
+      # Return signed order data
+      order_fields.merge(signature: signature)
     end
   end
 end 

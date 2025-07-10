@@ -15,6 +15,11 @@ module ClobClient
         Eth::Abi.encode("uint256", val)
       end
 
+      # Use eth.rb for ABI-encoded uint8 (1-byte padded to 32 bytes)
+      def self.encode_uint8(val)
+        Eth::Abi.encode("uint8", val)
+      end
+
       # Use eth.rb for ABI-encoded address (20-byte padded to 32 bytes)
       def self.encode_address(addr)
         return "" unless addr
@@ -89,9 +94,9 @@ module ClobClient
     end
 
     class OrderStruct
-      attr_accessor :maker, :taker, :token_id, :maker_amount, :taker_amount, :side, :fee_rate_bps, :nonce, :signer, :expiration, :signature_type
+      attr_accessor :maker, :taker, :token_id, :maker_amount, :taker_amount, :side, :fee_rate_bps, :nonce, :signer, :expiration, :signature_type, :salt
 
-      def initialize(maker:, taker:, token_id:, maker_amount:, taker_amount:, side:, fee_rate_bps:, nonce:, signer:, expiration:, signature_type:)
+      def initialize(maker:, taker:, token_id:, maker_amount:, taker_amount:, side:, fee_rate_bps:, nonce:, signer:, expiration:, signature_type:, salt:)
         @maker = maker
         @taker = taker
         @token_id = token_id
@@ -103,40 +108,43 @@ module ClobClient
         @signer = signer
         @expiration = expiration
         @signature_type = signature_type
+        @salt = salt
       end
 
-      TYPE_HASH = Model.keccak256("Order(address maker,address taker,address token_id,uint256 maker_amount,uint256 taker_amount,string side,uint256 fee_rate_bps,uint256 nonce,address signer,uint256 expiration,string signature_type)")
+      TYPE_HASH = Model.keccak256("Order(uint256 salt,address maker,address signer,address taker,uint256 tokenId,uint256 makerAmount,uint256 takerAmount,uint256 expiration,uint256 nonce,uint256 feeRateBps,uint8 side,uint8 signatureType)")
 
       def signable_bytes(domain)
         puts "OrderStruct values before encoding:"
+        puts "  salt: #{@salt.inspect}"
         puts "  maker: #{@maker.inspect}"
+        puts "  signer: #{@signer.inspect}"
         puts "  taker: #{@taker.inspect}"
         puts "  token_id: #{@token_id.inspect}"
         puts "  maker_amount: #{@maker_amount.inspect}"
         puts "  taker_amount: #{@taker_amount.inspect}"
-        puts "  side: #{@side.inspect}"
-        puts "  fee_rate_bps: #{@fee_rate_bps.inspect}"
-        puts "  nonce: #{@nonce.inspect}"
-        puts "  signer: #{@signer.inspect}"
         puts "  expiration: #{@expiration.inspect}"
+        puts "  nonce: #{@nonce.inspect}"
+        puts "  fee_rate_bps: #{@fee_rate_bps.inspect}"
+        puts "  side: #{@side.inspect}"
         puts "  signature_type: #{@signature_type.inspect}"
 
+        # Encode fields in the correct order as per the TYPE_HASH
+        salt_enc        = Model.encode_uint256(@salt)
         maker_enc       = Model.encode_address(@maker)
+        signer_enc      = Model.encode_address(@signer)
         taker_enc       = Model.encode_address(@taker)
         token_id_enc    = Model.encode_uint256(@token_id)
         maker_amt_enc   = Model.encode_uint256(@maker_amount)
         taker_amt_enc   = Model.encode_uint256(@taker_amount)
-        side_hash       = Model.encode_string(@side)
-        fee_bps_enc     = Model.encode_uint256(@fee_rate_bps)
-        nonce_enc       = Model.encode_uint256(@nonce)
-        signer_enc      = Model.encode_address(@signer)
         expiration_enc  = Model.encode_uint256(@expiration)
-        sig_type_hash   = Model.encode_string(@signature_type)
+        nonce_enc       = Model.encode_uint256(@nonce)
+        fee_bps_enc     = Model.encode_uint256(@fee_rate_bps)
+        side_enc        = Model.encode_uint8(@side.to_i)  # Convert to uint8
+        sig_type_enc    = Model.encode_uint8(@signature_type.to_i)  # Convert to uint8
 
-        packed = TYPE_HASH + maker_enc + taker_enc + token_id_enc +
-                 maker_amt_enc + taker_amt_enc + side_hash +
-                 fee_bps_enc + nonce_enc + signer_enc +
-                 expiration_enc + sig_type_hash
+        packed = TYPE_HASH + salt_enc + maker_enc + signer_enc + taker_enc +
+                 token_id_enc + maker_amt_enc + taker_amt_enc + expiration_enc +
+                 nonce_enc + fee_bps_enc + side_enc + sig_type_enc
 
         struct_hash = Model.keccak256(packed)
         domain_separator = Model.domain_separator_hash(domain)

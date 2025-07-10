@@ -4,6 +4,7 @@ module ClobClient
   module Signing
     module EIP712
       CLOB_DOMAIN_NAME = 'ClobAuthDomain'
+      ORDER_DOMAIN_NAME = 'Polymarket CTF Exchange'
       CLOB_VERSION = '1'
       MSG_TO_SIGN = 'This message attests that I control the given wallet'
 
@@ -39,12 +40,11 @@ module ClobClient
         signature
       end
       
-      def self.sign_order_message(signer, order_fields, domain = nil)
-        domain ||= get_clob_auth_domain(signer.get_chain_id)
+      def self.sign_order_message(signer, order_fields, domain)
         order_struct = ClobClient::Signing::OrderStruct.new(**order_fields)
         signable_data = order_struct.signable_bytes(domain)
-        order_struct_hash = ClobClient::Signing::Model.keccak256(signable_data)
-        signature = signer.sign(order_struct_hash)
+        # signable_data is already the final EIP712 digest, no need to hash again
+        signature = signer.sign(signable_data)
         signature = prepend_zx signature
         signature        
       end
