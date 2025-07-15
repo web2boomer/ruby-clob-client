@@ -114,19 +114,19 @@ module ClobClient
       TYPE_HASH = Model.keccak256("Order(uint256 salt,address maker,address signer,address taker,uint256 tokenId,uint256 makerAmount,uint256 takerAmount,uint256 expiration,uint256 nonce,uint256 feeRateBps,uint8 side,uint8 signatureType)")
 
       def signable_bytes(domain)
-        puts "OrderStruct values before encoding:"
-        puts "  salt: #{@salt.inspect}"
-        puts "  maker: #{@maker.inspect}"
-        puts "  signer: #{@signer.inspect}"
-        puts "  taker: #{@taker.inspect}"
-        puts "  token_id: #{@token_id.inspect}"
-        puts "  maker_amount: #{@maker_amount.inspect}"
-        puts "  taker_amount: #{@taker_amount.inspect}"
-        puts "  expiration: #{@expiration.inspect}"
-        puts "  nonce: #{@nonce.inspect}"
-        puts "  fee_rate_bps: #{@fee_rate_bps.inspect}"
-        puts "  side: #{@side.inspect}"
-        puts "  signature_type: #{@signature_type.inspect}"
+        # puts "OrderStruct values before encoding:"
+        # puts "  salt: #{@salt.inspect}"
+        # puts "  maker: #{@maker.inspect}"
+        # puts "  signer: #{@signer.inspect}"
+        # puts "  taker: #{@taker.inspect}"
+        # puts "  token_id: #{@token_id.inspect}"
+        # puts "  maker_amount: #{@maker_amount.inspect}"
+        # puts "  taker_amount: #{@taker_amount.inspect}"
+        # puts "  expiration: #{@expiration.inspect}"
+        # puts "  nonce: #{@nonce.inspect}"
+        # puts "  fee_rate_bps: #{@fee_rate_bps.inspect}"
+        # puts "  side: #{@side.inspect}"
+        # puts "  signature_type: #{@signature_type.inspect}"
 
         # Encode fields in the correct order as per the TYPE_HASH
         salt_enc        = Model.encode_uint256(@salt)

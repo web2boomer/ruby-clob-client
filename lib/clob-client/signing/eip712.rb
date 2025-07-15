@@ -4,7 +4,7 @@ module ClobClient
   module Signing
     module EIP712
       CLOB_DOMAIN_NAME = 'ClobAuthDomain'
-      ORDER_DOMAIN_NAME = 'Polymarket CTF Exchange'
+      ORDER_DOMAIN_NAME = 'Polymarket'
       CLOB_VERSION = '1'
       MSG_TO_SIGN = 'This message attests that I control the given wallet'
 
