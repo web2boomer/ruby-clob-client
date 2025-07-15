@@ -179,14 +179,14 @@ module ClobClient
       # Build EIP712 domain with verifyingContract if available
       domain = if contract_config
         {
-          name: ClobClient::Signing::EIP712::ORDER_DOMAIN_NAME,
+          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
           version: ClobClient::Signing::EIP712::CLOB_VERSION,
           chainId: chain_id,
           verifyingContract: contract_config.exchange
         }
       else
         {
-          name: ClobClient::Signing::EIP712::ORDER_DOMAIN_NAME,
+          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
           version: ClobClient::Signing::EIP712::CLOB_VERSION,
           chainId: chain_id
         }
