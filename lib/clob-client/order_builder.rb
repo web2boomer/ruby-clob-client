@@ -60,31 +60,43 @@ module ClobClient
     end
 
     def get_order_amounts(side, size, price, round_config)
+      puts "[DEBUG] get_order_amounts called with side: #{side}, size: #{size}, price: #{price}, round_config: #{round_config.inspect}"
       raw_price = OrderBuilderHelpers.round_normal(price, round_config[:price])
+      puts "[DEBUG] raw_price: #{raw_price}"
 
       if side == BUY
         raw_taker_amt = OrderBuilderHelpers.round_down(size, round_config[:size])
+        puts "[DEBUG] BUY raw_taker_amt: #{raw_taker_amt}"
         raw_maker_amt = raw_taker_amt * raw_price
+        puts "[DEBUG] BUY raw_maker_amt (before rounding): #{raw_maker_amt}"
         if OrderBuilderHelpers.decimal_places(raw_maker_amt) > round_config[:amount]
           raw_maker_amt = OrderBuilderHelpers.round_up(raw_maker_amt, round_config[:amount] + 4)
+          puts "[DEBUG] BUY raw_maker_amt (after round_up): #{raw_maker_amt}"
           if OrderBuilderHelpers.decimal_places(raw_maker_amt) > round_config[:amount]
             raw_maker_amt = OrderBuilderHelpers.round_down(raw_maker_amt, round_config[:amount])
+            puts "[DEBUG] BUY raw_maker_amt (after round_down): #{raw_maker_amt}"
           end
         end
         maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt)
         taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt)
+        puts "[DEBUG] BUY maker_amount: #{maker_amount}, taker_amount: #{taker_amount}"
         [BUY_SIDE, maker_amount, taker_amount]  # 0 for BUY
       elsif side == SELL
         raw_maker_amt = OrderBuilderHelpers.round_down(size, round_config[:size])
+        puts "[DEBUG] SELL raw_maker_amt: #{raw_maker_amt}"
         raw_taker_amt = raw_maker_amt * raw_price
+        puts "[DEBUG] SELL raw_taker_amt (before rounding): #{raw_taker_amt}"
         if OrderBuilderHelpers.decimal_places(raw_taker_amt) > round_config[:amount]
           raw_taker_amt = OrderBuilderHelpers.round_up(raw_taker_amt, round_config[:amount] + 4)
+          puts "[DEBUG] SELL raw_taker_amt (after round_up): #{raw_taker_amt}"
           if OrderBuilderHelpers.decimal_places(raw_taker_amt) > round_config[:amount]
             raw_taker_amt = OrderBuilderHelpers.round_down(raw_taker_amt, round_config[:amount])
+            puts "[DEBUG] SELL raw_taker_amt (after round_down): #{raw_taker_amt}"
           end
         end
         maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt)
         taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt)
+        puts "[DEBUG] SELL maker_amount: #{maker_amount}, taker_amount: #{taker_amount}"
         [SELL_SIDE, maker_amount, taker_amount]  # 1 for SELL
       else
         raise ArgumentError, "order_args.side must be '#{BUY}' or '#{SELL}'"

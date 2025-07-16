@@ -41,6 +41,7 @@ module ClobClient
       end
 
       def self.domain_separator_hash(domain)
+        puts "domain: #{domain.inspect}"
         if domain[:verifyingContract]
           type_hash     = encode_string("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
           name_hash     = encode_string(domain[:name])
@@ -137,7 +138,7 @@ module ClobClient
     # === EIP712 ===
     module EIP712
       CLOB_DOMAIN_NAME = 'ClobAuthDomain'
-      ORDER_DOMAIN_NAME = 'Polymarket'
+      # ORDER_DOMAIN_NAME = 'Polymarket'
       CLOB_VERSION = '1'
       MSG_TO_SIGN = 'This message attests that I control the given wallet'
 
