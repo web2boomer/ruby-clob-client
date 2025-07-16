@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 require 'time'
-require_relative 'signing/eip712'
-require_relative 'signing/hmac'
+require_relative 'signing'
 
 module ClobClient
   module Headers

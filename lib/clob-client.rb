@@ -11,9 +11,7 @@ require_relative "clob-client/headers"
 require_relative "clob-client/http_helpers"
 require_relative "clob-client/order_builder"
 require_relative "clob-client/signer"
-require_relative "clob-client/signing/eip712"
-require_relative "clob-client/signing/hmac"
-require_relative "clob-client/signing/model"
+require_relative "clob-client/signing"
 require_relative "clob-client/utilities"
 
 module ClobClient

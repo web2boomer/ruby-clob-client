@@ -134,15 +134,23 @@ module ClobClient
         round_config
       )
 
+      puts "[DEBUG] side: #{side}"
+      puts "[DEBUG] maker_amount: #{maker_amount}"
+      puts "[DEBUG] taker_amount: #{taker_amount}"
+      puts "[DEBUG] round_config: #{round_config.inspect}"
+
       # Generate salt for order uniqueness
       salt = OrderBuilderHelpers.generate_salt
+      puts "[DEBUG] salt: #{salt}"
 
       # Get contract config for domain (for verifyingContract)
       chain_id = @signer.get_chain_id if @signer.respond_to?(:get_chain_id)
+      puts "[DEBUG] chain_id: #{chain_id}"
       contract_config = nil
       if chain_id
         contract_config = ClobClient::Config.get_contract_config(chain_id, neg_risk)
       end
+      puts "[DEBUG] contract_config: #{contract_config.inspect}"
 
       # Create order data structure
       order_data = ClobClient::OrderData.new(
@@ -159,6 +167,7 @@ module ClobClient
         signature_type: @sig_type || ClobClient::SignatureType::EOA,
         salt: salt
       )
+      puts "[DEBUG] order_data: #{order_data.inspect}"
 
       # Create order fields for EIP712 signing (maintaining backward compatibility)
       order_fields = {
@@ -175,24 +184,10 @@ module ClobClient
         signature_type: order_data.signature_type,
         salt: order_data.salt
       }
+      puts "[DEBUG] order_fields: #{order_fields.inspect}"
 
-      # Build EIP712 domain with verifyingContract if available
-      domain = if contract_config
-        {
-          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
-          version: ClobClient::Signing::EIP712::CLOB_VERSION,
-          chainId: chain_id,
-          verifyingContract: contract_config.exchange
-        }
-      else
-        {
-          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
-          version: ClobClient::Signing::EIP712::CLOB_VERSION,
-          chainId: chain_id
-        }
-      end
-
-      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields, domain)
+      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields)
+      puts "[DEBUG] signature: #{signature.inspect}"
       order_data = order_fields.merge(signature: signature)
       order_data
     end
@@ -201,51 +196,5 @@ module ClobClient
       # stub to implement
     end
 
-    def create_order_from_data(order_data, options = {})
-      # Get contract config for domain (for verifyingContract)
-      chain_id = @signer.get_chain_id if @signer.respond_to?(:get_chain_id)
-      neg_risk = options[:neg_risk]
-      contract_config = nil
-      if chain_id
-        contract_config = ClobClient::Config.get_contract_config(chain_id, neg_risk)
-      end
-
-      # Build EIP712 domain with verifyingContract if available
-      domain = if contract_config
-        {
-          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
-          version: ClobClient::Signing::EIP712::CLOB_VERSION,
-          chainId: chain_id,
-          verifyingContract: contract_config.exchange
-        }
-      else
-        {
-          name: ClobClient::Signing::EIP712::CLOB_DOMAIN_NAME,
-          version: ClobClient::Signing::EIP712::CLOB_VERSION,
-          chainId: chain_id
-        }
-      end
-
-      # Convert OrderData to hash for signing
-      order_fields = {
-        maker: order_data.maker,
-        taker: order_data.taker,
-        token_id: order_data.token_id,
-        maker_amount: order_data.maker_amount,
-        taker_amount: order_data.taker_amount,
-        side: order_data.side,
-        fee_rate_bps: order_data.fee_rate_bps,
-        nonce: order_data.nonce,
-        signer: order_data.signer,
-        expiration: order_data.expiration,
-        signature_type: order_data.signature_type,
-        salt: order_data.salt
-      }
-
-      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields, domain)
-
-      # Return signed order data
-      order_fields.merge(signature: signature)
-    end
   end
 end 
