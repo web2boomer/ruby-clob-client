@@ -128,6 +128,8 @@ module ClobClient
         round_config
       )
 
+      
+
       puts "[DEBUG] side: #{side}"
       puts "[DEBUG] maker_amount: #{maker_amount}"
       puts "[DEBUG] taker_amount: #{taker_amount}"
