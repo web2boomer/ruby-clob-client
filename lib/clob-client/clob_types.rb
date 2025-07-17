@@ -2,7 +2,54 @@
 
 module ClobClient
   module ClobTypes
-    # TODO: Port types from Python clob_types.py
+    # AssetType enum
+    module AssetType
+      COLLATERAL = :COLLATERAL
+      CONDITIONAL = :CONDITIONAL
+    end
+
+    # TickSize allowed values
+    TICK_SIZES = ["0.1", "0.01", "0.001", "0.0001"].freeze
+
+    # BalanceAllowanceParams struct
+    BalanceAllowanceParams = Struct.new(
+      :asset_type, :token_id, :signature_type,
+      keyword_init: true
+    ) do
+      def initialize(*args)
+        super
+        self.signature_type ||= -1
+      end
+    end
+
+    # OrderScoringParams struct
+    OrderScoringParams = Struct.new(:orderId, keyword_init: true)
+
+    # OrdersScoringParams struct
+    OrdersScoringParams = Struct.new(:orderIds, keyword_init: true)
+
+    # CreateOrderOptions struct
+    CreateOrderOptions = Struct.new(:tick_size, :neg_risk, keyword_init: true)
+
+    # PartialCreateOrderOptions struct
+    PartialCreateOrderOptions = Struct.new(:tick_size, :neg_risk, keyword_init: true)
+
+    # RoundConfig struct
+    RoundConfig = Struct.new(:price, :size, :amount, keyword_init: true)
+
+    # ContractConfig struct
+    ContractConfig = Struct.new(:exchange, :collateral, :conditional_tokens, keyword_init: true)
+
+    # Placeholder for SignedOrder (should be replaced with actual implementation if available)
+    SignedOrder = Struct.new(:data, keyword_init: true)
+
+    # PostOrdersArgs struct
+    PostOrdersArgs = Struct.new(:order, :orderType, keyword_init: true) do
+      def initialize(*args)
+        super
+        self.orderType ||= OrderType::GTC
+      end
+    end
   end
 
   # Enum for order types

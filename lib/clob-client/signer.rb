@@ -24,8 +24,8 @@ module ClobClient
     def sign(message_hash)
       sig = @key.sign(message_hash)  # expects 32-byte binary
       # The signature is already a hex string, just return it
-      # puts "Signature object class: #{sig.class}"
-      # puts "Signature object: #{sig.inspect}"
+      puts "Signature object class: #{sig.class}"
+      puts "Signature object: #{sig.inspect}"
       sig
     end
     

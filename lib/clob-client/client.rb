@@ -406,19 +406,30 @@ module ClobClient
       assert_level_2_auth
       
       # Serialize order using order_to_json utility
-      body = ClobClient::Utilities.order_to_json(order, @creds.api_key, order_type)
+      # Ensure order_type is a string (if it's a constant or symbol)
+      body = ClobClient::Utilities.order_to_json(order, @creds.api_key, order_type.to_s)
       
       request_args = ClobClient::RequestArgs.new(method: 'POST', request_path:  Endpoints::POST_ORDER, body: body)
       headers = ClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
-      uri = URI.parse("#{@host}#{Endpoints::POST_ORDERS}")
+      uri = URI.parse("#{@host}#{Endpoints::POST_ORDER}")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
-      request = Net::HTTP::Post.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
+      request = Net::HTTP::Post.new(uri.request_uri)
+      # Set headers individually to avoid Net::HTTP header issues
+      headers.each { |k, v| request[k] = v }
+      request['Content-Type'] = 'application/json'
+      request['User-Agent'] = 'clob-client/1.0'
       request.body = body.to_json
+      # Debug: log full request
+      puts "[CLOB DEBUG] POST #{uri}"
+      puts "[CLOB DEBUG] Headers: #{request.each_header.to_h}"
+      puts "[CLOB DEBUG] Body: #{request.body}"
       response = http.request(request)
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
+        puts "[CLOB DEBUG] Response code: #{response.code}"
+        puts "[CLOB DEBUG] Response body: #{response.body}"
         raise "Couldn't post order: #{response.body}"
         nil
       end

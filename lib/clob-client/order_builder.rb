@@ -70,32 +70,25 @@ module ClobClient
 
     def get_order_amounts(side, size, price, round_config)
       raw_price = OrderBuilderHelpers.round_normal(price, round_config[:price])
-    
-      case side
-      when BUY
-        # BUY: you pay USDC (maker) to get outcome shares (taker)
-        raw_taker_amt = OrderBuilderHelpers.round_down(size, round_config[:size])
-        raw_maker_amt = raw_taker_amt * raw_price
-    
-        raw_maker_amt = adjust_precision(raw_maker_amt, round_config[:amount])
-    
-        maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt) # USDC
-        taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt) # outcome shares
-    
-        [BUY_SIDE, maker_amount, taker_amount]
-    
-      when SELL
-        # SELL: you provide outcome shares (maker) to get USDC (taker)
-        raw_maker_amt = OrderBuilderHelpers.round_down(size, round_config[:size])
-        raw_taker_amt = raw_maker_amt * raw_price
-    
-        raw_taker_amt = adjust_precision(raw_taker_amt, round_config[:amount])
-    
-        maker_amount = OrderBuilderHelpers.to_token_decimals(raw_maker_amt) # outcome shares
-        taker_amount = OrderBuilderHelpers.to_token_decimals(raw_taker_amt) # USDC
-    
-        [SELL_SIDE, maker_amount, taker_amount]
-    
+
+      if side == BUY
+        raw_taker = OrderBuilderHelpers.round_down(size, round_config[:size])
+        raw_maker = adjust_precision(raw_taker * raw_price, round_config[:amount])
+
+        if raw_taker.zero? || raw_maker.zero?
+          raise ArgumentError, "raw_taker and raw_maker must not be zero (got raw_taker=#{raw_taker}, raw_maker=#{raw_maker})"
+        end
+
+        [BUY_SIDE, OrderBuilderHelpers.to_token_decimals(raw_maker), OrderBuilderHelpers.to_token_decimals(raw_taker)]
+      elsif side == SELL
+        raw_maker = OrderBuilderHelpers.round_down(size, round_config[:size])
+        raw_taker = adjust_precision(raw_maker * raw_price, round_config[:amount])
+
+        if raw_maker.zero? || raw_taker.zero?
+          raise ArgumentError, "raw_maker and raw_taker must not be zero (got raw_maker=#{raw_maker}, raw_taker=#{raw_taker})"
+        end
+
+        [SELL_SIDE, OrderBuilderHelpers.to_token_decimals(raw_maker), OrderBuilderHelpers.to_token_decimals(raw_taker)]
       else
         raise ArgumentError, "order_args.side must be '#{BUY}' or '#{SELL}'"
       end
@@ -121,6 +114,7 @@ module ClobClient
       tick_size = options[:tick_size]
       neg_risk = options[:neg_risk]
       round_config = ROUNDING_CONFIG[tick_size]
+      puts "[DEBUG] round_config in create_order: #{round_config.inspect}"
       side, maker_amount, taker_amount = get_order_amounts(
         order_args.side,
         order_args.size,
@@ -128,7 +122,7 @@ module ClobClient
         round_config
       )
 
-      
+
 
       puts "[DEBUG] side: #{side}"
       puts "[DEBUG] maker_amount: #{maker_amount}"
