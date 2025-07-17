@@ -75,18 +75,10 @@ module ClobClient
         raw_taker = OrderBuilderHelpers.round_down(size, round_config[:size])
         raw_maker = adjust_precision(raw_taker * raw_price, round_config[:amount])
 
-        if raw_taker.zero? || raw_maker.zero?
-          raise ArgumentError, "raw_taker and raw_maker must not be zero (got raw_taker=#{raw_taker}, raw_maker=#{raw_maker})"
-        end
-
         [BUY_SIDE, OrderBuilderHelpers.to_token_decimals(raw_maker), OrderBuilderHelpers.to_token_decimals(raw_taker)]
       elsif side == SELL
         raw_maker = OrderBuilderHelpers.round_down(size, round_config[:size])
         raw_taker = adjust_precision(raw_maker * raw_price, round_config[:amount])
-
-        if raw_maker.zero? || raw_taker.zero?
-          raise ArgumentError, "raw_maker and raw_taker must not be zero (got raw_maker=#{raw_maker}, raw_taker=#{raw_taker})"
-        end
 
         [SELL_SIDE, OrderBuilderHelpers.to_token_decimals(raw_maker), OrderBuilderHelpers.to_token_decimals(raw_taker)]
       else
@@ -134,16 +126,10 @@ module ClobClient
       puts "[DEBUG] salt: #{salt}"
 
       # Get contract config for domain (for verifyingContract)
-      chain_id = @signer.get_chain_id if @signer.respond_to?(:get_chain_id)
-      puts "[DEBUG] chain_id: #{chain_id}"
-      contract_config = nil
-      if chain_id
-        contract_config = ClobClient::Config.get_contract_config(chain_id, neg_risk)
-      end
+      contract_config = ClobClient::Config.get_contract_config(@signer.get_chain_id , neg_risk)
       puts "[DEBUG] contract_config: #{contract_config.inspect}"
 
-      # Create order data structure
-      order_data = ClobClient::OrderData.new(
+      order_data = ClobClient::Signing::OrderStruct.new(
         maker: @funder,
         taker: order_args.taker,
         token_id: order_args.token_id.to_i,
@@ -155,30 +141,12 @@ module ClobClient
         signer: @signer.address,
         expiration: order_args.expiration.to_i,
         signature_type: @sig_type || ClobClient::SignatureType::EOA,
-        salt: salt
+        salt: salt.to_i
       )
       puts "[DEBUG] order_data: #{order_data.inspect}"
 
-      # Create order fields for EIP712 signing (maintaining backward compatibility)
-      order_fields = {
-        maker: order_data.maker,
-        taker: order_data.taker,
-        token_id: order_data.token_id,
-        maker_amount: order_data.maker_amount,
-        taker_amount: order_data.taker_amount,
-        side: order_data.side,
-        fee_rate_bps: order_data.fee_rate_bps,
-        nonce: order_data.nonce,
-        signer: order_data.signer,
-        expiration: order_data.expiration,
-        signature_type: order_data.signature_type,
-        salt: order_data.salt
-      }
-      puts "[DEBUG] order_fields: #{order_fields.inspect}"
-
-      signature = ClobClient::Signing::EIP712.sign_order_message(@signer, order_fields)
-      puts "[DEBUG] signature: #{signature.inspect}"
-      order_data = order_fields.merge(signature: signature)
+      order_data.sign_order_message(@signer)
+      puts "[DEBUG] signed order: #{order_data.inspect}"
       order_data
     end
 

@@ -381,25 +381,7 @@ module ClobClient
     end
 
     def post_orders(args)
-      assert_level_2_auth
-      
-      # Serialize orders using order_to_json utility
-      body = args.map { |arg| ClobClient::Utilities.order_to_json(arg.order, @creds.api_key, ClobClient::OrderType::GTC) }
-      
-      request_args = ClobClient::RequestArgs.new(method: 'POST', request_path: Endpoints::POST_ORDERS, body: body)
-      headers = ClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
-      uri = URI.parse("#{@host}#{Endpoints::POST_ORDERS}")
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      request = Net::HTTP::Post.new(uri.request_uri, headers.merge('Content-Type' => 'application/json'))
-      request.body = body.to_json
-      response = http.request(request)
-      if response.is_a?(Net::HTTPSuccess)
-        JSON.parse(response.body)
-      else
-        raise "Couldn't post orders: #{response.body}"
-        nil
-      end
+      # stub
     end
 
     def post_order(order, order_type = ClobClient::OrderType::GTC)
@@ -409,7 +391,7 @@ module ClobClient
       # Ensure order_type is a string (if it's a constant or symbol)
       body = ClobClient::Utilities.order_to_json(order, @creds.api_key, order_type.to_s)
       
-      request_args = ClobClient::RequestArgs.new(method: 'POST', request_path:  Endpoints::POST_ORDER, body: body)
+      request_args = ClobClient::RequestArgs.new(method: 'POST', request_path: Endpoints::POST_ORDER, body: body)
       headers = ClobClient::Headers.create_level_2_headers(@signer, @creds, request_args)
       uri = URI.parse("#{@host}#{Endpoints::POST_ORDER}")
       http = Net::HTTP.new(uri.host, uri.port)
