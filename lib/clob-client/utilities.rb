@@ -29,35 +29,27 @@ module ClobClient
     end
 
     def self.order_to_json(order, owner, order_type)
-      # Convert order fields to camelCase and string values as required
       order_hash = order.to_h
-      camel_order = {}
-      order_hash.each do |k, v|
-        camel_key = camelize(k)
-        # These fields should be integers (side, signatureType)
-        if %w[side signatureType].include?(camel_key)
-          camel_order[camel_key] = v.to_i
-        # These fields should be strings (except signature, which is a hex string)
-        elsif camel_key == 'signature'
-          camel_order[camel_key] = v
-        else
-          camel_order[camel_key] = v.to_s
-        end
+
+      camel_order = order_hash.each_with_object({}) do |(k, v), h|
+        camel_key =
+          case k.to_s
+          when 'token_id' then 'tokenId'
+          when 'signature_type' then 'signatureType'
+          else camelize(k)
+          end
+
+        h[camel_key] =
+          case camel_key
+          when 'side', 'signatureType'
+            v.to_i
+          when 'signature'
+            v
+          else
+            v.to_s
+          end
       end
-      # Ensure tokenId is present as string (API expects tokenId, not token_id)
-      if camel_order['token_id']
-        camel_order['tokenId'] = camel_order.delete('token_id')
-      end
-      # Ensure signatureType is present as integer (API expects signatureType, not signature_type)
-      if camel_order['signature_type']
-        camel_order['signatureType'] = camel_order.delete('signature_type').to_i
-      end
-      # Ensure side is present as integer (API expects side, not side as string)
-      if camel_order['side']
-        camel_order['side'] = camel_order['side'].to_i
-      end
-      # Remove any snake_case keys left
-      camel_order = camel_order.reject { |k, _| k.include?('_') }
+
       { order: camel_order, owner: owner, orderType: order_type }
     end
 
