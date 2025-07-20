@@ -405,9 +405,9 @@ module ClobClient
       request.body = body_json
       response = http.request(request)
       # Debug: log full request
-      logger.debug { "POST #{uri}" } if logger
-      logger.debug { "Headers: #{request.each_header.to_h}" } if logger
-      logger.debug { "Body: #{request.body}" } if logger
+      puts  "POST #{uri}" 
+      puts  "Headers: #{request.each_header.to_h}" 
+      puts  "Body: #{request.body}" 
       
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)

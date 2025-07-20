@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'eth'
+require 'logger'
 
 module ClobClient
   class Signer

@@ -3,6 +3,7 @@ require 'openssl'
 require 'base64'
 require 'eth'
 require 'digest/keccak'
+require 'logger'
 
 module ClobClient
   module Signing
@@ -16,17 +17,17 @@ module ClobClient
         message = "#{timestamp}#{method.upcase}#{request_path}#{normalized_body}"
         
         # Debug logging
-        puts "[HMAC DEBUG] Secret (base64): #{secret}"
-        puts "[HMAC DEBUG] Timestamp: #{timestamp}"
-        puts "[HMAC DEBUG] Method: #{method}"
-        puts "[HMAC DEBUG] Request path: #{request_path}"
-        puts "[HMAC DEBUG] Body: #{normalized_body}"
-        puts "[HMAC DEBUG] Message to sign: #{message}"
+        puts  "[HMAC DEBUG] Secret (base64): #{secret}" 
+        puts  "[HMAC DEBUG] Timestamp: #{timestamp}" 
+        puts  "[HMAC DEBUG] Method: #{method}" 
+        puts  "[HMAC DEBUG] Request path: #{request_path}" 
+        puts  "[HMAC DEBUG] Body: #{normalized_body}" 
+        puts  "[HMAC DEBUG] Message to sign: #{message}" 
         
         hmac = OpenSSL::HMAC.digest('sha256', base64_secret, message.encode('UTF-8'))
         signature = Base64.urlsafe_encode64(hmac)
         
-        puts "[HMAC DEBUG] Generated signature: #{signature}"
+        puts  "[HMAC DEBUG] Generated signature: #{signature}" 
         
         signature
       end
@@ -146,7 +147,7 @@ module ClobClient
       }
       end
 
-      TYPE_HASH = Model.keccak256("Order(uint256 salt,string maker,string signer,string taker,string tokenId,string makerAmount,string takerAmount,string expiration,string nonce,string feeRateBps,string side,uint256 signatureType)")
+      TYPE_HASH = "Order(uint256 salt,address maker,address signer,address taker,uint256 tokenId,uint256 makerAmount,uint256 takerAmount,uint256 expiration,uint256 nonce,uint256 feeRateBps,uint8 side,uint8 signatureType)"
 
       def signable_bytes(domain)
         # Encode fields in the correct order as per the Python reference
@@ -205,7 +206,7 @@ module ClobClient
         domain
       end
 
-      def self.sign_clob_auth_message(signer, timestamp, nonce)
+      def self.sign_clob_auth_message(signer, timestamp, nonce, logger: nil)
         domain = get_clob_auth_domain(signer.get_chain_id)
 
         clob_auth = ClobClient::Signing::ClobAuth.new(
@@ -219,16 +220,16 @@ module ClobClient
         signable_data = clob_auth.signable_bytes(domain)
         
         # Debug: log the signable data
-        puts "[SIGNING DEBUG] Signable data (hex): #{signable_data.unpack1('H*')}"
-        puts "[SIGNING DEBUG] Address: #{signer.address}"
-        puts "[SIGNING DEBUG] Timestamp: #{timestamp}"
-        puts "[SIGNING DEBUG] Nonce: #{nonce}"
+        puts  "[SIGNING DEBUG] Signable data (hex): #{signable_data.unpack1('H*')}" 
+        puts  "[SIGNING DEBUG] Address: #{signer.address}" 
+        puts  "[SIGNING DEBUG] Timestamp: #{timestamp}" 
+        puts  "[SIGNING DEBUG] Nonce: #{nonce}" 
 
         signature = signer.sign(signable_data)
         signature = prepend_zx signature
         
         # Debug: log the signature
-        puts "[SIGNING DEBUG] Raw signature: #{signature}"
+        puts  "[SIGNING DEBUG] Raw signature: #{signature}" 
         
         signature
       end
