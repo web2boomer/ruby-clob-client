@@ -202,13 +202,13 @@ module ClobClient
         "0x#{hex_string}"
       end
 
-      def self.get_clob_auth_domain(chain_id, config = nil)
+      def self.get_clob_auth_domain(chain_id, exchange_address = nil)
         domain = {
           name: CLOB_DOMAIN_NAME,
           version: CLOB_VERSION,
           chainId: chain_id
         }
-        domain[:verifyingContract] = config.exchange if config&.exchange
+        domain[:verifyingContract] = exchange_address if exchange_address
         domain
       end
 
