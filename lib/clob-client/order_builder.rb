@@ -132,14 +132,14 @@ module ClobClient
         nonce: order_args.nonce.to_i,
         signer: @signer.address,
         expiration: order_args.expiration.to_i,
-        signature_type: @sig_type || ClobClient::SignatureType::EOA,
+        signature_type: @sig_type.to_i,
         salt: salt.to_i
       )
       puts  "[DEBUG] order_data: #{order_data.inspect}" 
 
       domain = ClobClient::Signing::EIP712.get_clob_auth_domain(@signer.get_chain_id, contract_config.exchange)
       signable_data = order_data.signable_bytes(domain)
-      puts "Digest to sign: 0x" + signable_data
+      puts "Digest to sign: 0x" + signable_data.unpack1("H*")
       
       order_data.signature = @signer.sign(signable_data)
       puts "Signature" + order_data.signature 
