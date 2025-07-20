@@ -218,16 +218,15 @@ module ClobClient
         signable_data = clob_auth.signable_bytes(domain)
         
         # Debug: log the signable data
-        puts  "[SIGNING DEBUG] Signable data (hex): #{signable_data.unpack1('H*')}" 
-        puts  "[SIGNING DEBUG] Address: #{signer.address}" 
-        puts  "[SIGNING DEBUG] Timestamp: #{timestamp}" 
-        puts  "[SIGNING DEBUG] Nonce: #{nonce}" 
+        # puts  "[SIGNING DEBUG] Signable data (hex): #{signable_data.unpack1('H*')}" 
+        # puts  "[SIGNING DEBUG] Address: #{signer.address}" 
+        # puts  "[SIGNING DEBUG] Timestamp: #{timestamp}" 
+        # puts  "[SIGNING DEBUG] Nonce: #{nonce}" 
 
         signature = signer.sign(signable_data)
-        signature = prepend_zx signature
         
         # Debug: log the signature
-        puts  "[SIGNING DEBUG] Raw signature: #{signature}" 
+        # puts  "[SIGNING DEBUG] Raw signature: #{signature}" 
         
         signature
       end

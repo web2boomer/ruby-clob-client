@@ -25,8 +25,7 @@ module ClobClient
 
     def sign(message_hash)
       sig = @key.sign(message_hash)  # expects 32-byte binary
-      # Extract the hex string from the signature object
-      sig.to_s
+      ClobClient::Signing::EIP712.prepend_zx sig
     end
     
   end
