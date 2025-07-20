@@ -11,6 +11,35 @@ module ClobClient
     SELL_SIDE = 1
   end
 
+  module OrderBuilderHelpers
+    def self.round_down(x, sig_digits)
+      (x * (10**sig_digits)).floor / (10.0**sig_digits)
+    end
+
+    def self.round_normal(x, sig_digits)
+      (x * (10**sig_digits)).round / (10.0**sig_digits)
+    end
+
+    def self.round_up(x, sig_digits)
+      (x * (10**sig_digits)).ceil / (10.0**sig_digits)
+    end
+
+    def self.to_token_decimals(x)
+      f = (10**6) * x
+      f = round_normal(f, 0) if decimal_places(f) > 0
+      f.to_i
+    end
+
+    def self.decimal_places(x)
+      BigDecimal(x.to_s).exponent.abs
+    end
+
+    def self.generate_salt
+      # Generate a unique salt for order entropy
+      SecureRandom.hex(32).to_i(16)
+    end
+  end  
+
 
   RoundConfig = Struct.new(:price, :size, :amount, keyword_init: true)
 
@@ -107,8 +136,10 @@ module ClobClient
       )
       puts  "[DEBUG] order_data: #{order_data.inspect}" 
 
-      signable_data = order_data.signable_bytes
+      domain = ClobClient::Signing::EIP712.get_clob_auth_domain(@signer.get_chain_id)
+      signable_data = order_data.signable_bytes(domain)
       puts "Digest to sign: 0x" + signable_data
+      
       order_data.signature = @signer.sign(signable_data)
       puts "Signature" + order_data.signature 
 

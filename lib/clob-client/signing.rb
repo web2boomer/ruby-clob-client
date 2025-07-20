@@ -224,6 +224,7 @@ module ClobClient
         puts  "[SIGNING DEBUG] Nonce: #{nonce}" 
 
         signature = signer.sign(signable_data)
+        signature = prepend_zx signature
         
         # Debug: log the signature
         puts  "[SIGNING DEBUG] Raw signature: #{signature}" 
