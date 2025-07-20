@@ -119,6 +119,7 @@ module ClobClient
       # Get contract config for domain (for verifyingContract)
       contract_config = ClobClient::Config.get_contract_config(@signer.get_chain_id , neg_risk)
       puts  "[DEBUG] contract_config: #{contract_config.inspect}" 
+      puts "[DEBUG] exchange: #{contract_config.exchange}"
 
       order_data = ClobClient::Signing::OrderStruct.new(
         maker: @funder,
@@ -136,7 +137,7 @@ module ClobClient
       )
       puts  "[DEBUG] order_data: #{order_data.inspect}" 
 
-      domain = ClobClient::Signing::EIP712.get_clob_auth_domain(@signer.get_chain_id)
+      domain = ClobClient::Signing::EIP712.get_clob_auth_domain(@signer.get_chain_id, contract_config.exchange)
       signable_data = order_data.signable_bytes(domain)
       puts "Digest to sign: 0x" + signable_data
       
