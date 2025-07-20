@@ -180,7 +180,7 @@ module ClobClient
       end
 
       def sign_order_message(signer)
-        domain = EIP712.get_clob_auth_domain(signer.get_chain_id)
+        domain = EIP712.get_clob_auth_domain(signer.get_chain_id, "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E")
         
         signable_data = self.signable_bytes(domain)
 
