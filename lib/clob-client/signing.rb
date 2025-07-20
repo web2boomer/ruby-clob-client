@@ -106,7 +106,7 @@ module ClobClient
     end
 
     class OrderStruct
-      attr_accessor :maker, :taker, :token_id, :maker_amount, :taker_amount, :side, :fee_rate_bps, :nonce, :signer, :expiration, :signature, :signature_type, :salt
+      attr_accessor :maker, :taker, :token_id, :maker_amount, :taker_amount, :side, :fee_rate_bps, :nonce, :signer, :expiration, :signature, :signature_type, :salt, :digest
 
       def initialize(maker:, taker:, token_id:, maker_amount:, taker_amount:, side:, fee_rate_bps:, nonce:, signer:, expiration:, signature_type:, salt:)
         @maker           = maker           # Maker of the order, i.e the source of funds for the order
@@ -172,21 +172,13 @@ module ClobClient
                  token_id_enc + maker_amt_enc + taker_amt_enc + expiration_enc +
                  nonce_enc + fee_bps_enc + side_enc + sig_type_enc
 
-        struct_hash = Model.keccak256(packed)
+        struct_hash = Model.keccak256(packed) # need .pack("H*") ?
         domain_separator = Model.domain_separator_hash(domain)
-        digest = Model.create_eip712_digest(domain_separator, struct_hash)
-        puts "Digest to sign: 0x" + digest.unpack1("H*")
-        digest
+        Model.create_eip712_digest(domain_separator, struct_hash)
       end
 
-      def sign_order_message(signer)
-        domain = EIP712.get_clob_auth_domain(signer.get_chain_id, "0x4bFb41d5B3570DeFd03C39a9A4D8dE6Bd8B8982E")
-        
-        signable_data = self.signable_bytes(domain)
 
-        self.signature = signer.sign(signable_data)
-        self.signature = EIP712.prepend_zx(signature)
-      end
+ 
 
     end
 
@@ -232,7 +224,6 @@ module ClobClient
         puts  "[SIGNING DEBUG] Nonce: #{nonce}" 
 
         signature = signer.sign(signable_data)
-        signature = prepend_zx signature
         
         # Debug: log the signature
         puts  "[SIGNING DEBUG] Raw signature: #{signature}" 

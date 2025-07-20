@@ -11,42 +11,6 @@ module ClobClient
     SELL_SIDE = 1
   end
 
-  module OrderBuilderHelpers
-    def self.round_down(x, sig_digits)
-      (x * (10**sig_digits)).floor / (10.0**sig_digits)
-    end
-
-    def self.round_normal(x, sig_digits)
-      (x * (10**sig_digits)).round / (10.0**sig_digits)
-    end
-
-    def self.round_up(x, sig_digits)
-      (x * (10**sig_digits)).ceil / (10.0**sig_digits)
-    end
-
-    def self.to_token_decimals(x)
-      f = (10**6) * x
-      f = round_normal(f, 0) if decimal_places(f) > 0
-      f.to_i
-    end
-
-    def self.decimal_places(x)
-      BigDecimal(x.to_s).exponent.abs
-    end
-
-    def self.generate_salt
-      # Generate a unique salt for order entropy
-      SecureRandom.hex(32).to_i(16)
-    end
-
-    def self.round_amount(amount, round_digits)
-      if decimal_places(amount) > round_digits
-        amount = round_up(amount, round_digits + 4)
-        amount = round_down(amount, round_digits) if decimal_places(amount) > round_digits
-      end
-      amount
-    end
-  end
 
   RoundConfig = Struct.new(:price, :size, :amount, keyword_init: true)
 
@@ -143,7 +107,11 @@ module ClobClient
       )
       puts  "[DEBUG] order_data: #{order_data.inspect}" 
 
-      order_data.sign_order_message(@signer)
+      signable_data = order_data.signable_bytes
+      puts "Digest to sign: 0x" + signable_data
+      order_data.signature = @signer.sign(signable_data)
+      puts "Signature" + order_data.signature 
+
       puts  "[DEBUG] signed order: #{order_data.inspect}" 
       order_data
     end
