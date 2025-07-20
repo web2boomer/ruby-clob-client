@@ -24,15 +24,6 @@ module ClobClient
 
     def self.create_level_2_headers(signer, creds, request_args)
       timestamp = Time.now.to_i
-      
-      # Debug logging
-      puts "[HEADERS DEBUG] API Secret: #{creds.api_secret}"
-      puts "[HEADERS DEBUG] API Key: #{creds.api_key}"
-      puts "[HEADERS DEBUG] API Passphrase: #{creds.api_passphrase}"
-      puts "[HEADERS DEBUG] Request method: #{request_args.method}"
-      puts "[HEADERS DEBUG] Request path: #{request_args.request_path}"
-      puts "[HEADERS DEBUG] Request body: #{request_args.body}"
-      
       hmac_sig = ClobClient::Signing::HMAC.build_hmac_signature(
         creds.api_secret,
         timestamp,
@@ -40,18 +31,13 @@ module ClobClient
         request_args.request_path,
         request_args.body
       )
-      
-      headers = {
+      {
         POLY_ADDRESS => signer.address,
         POLY_SIGNATURE => hmac_sig,
         POLY_TIMESTAMP => timestamp.to_s,
         POLY_API_KEY => creds.api_key,
         POLY_PASSPHRASE => creds.api_passphrase
       }
-      
-      puts "[HEADERS DEBUG] Generated headers: #{headers}"
-      
-      headers
     end
   end
 end 

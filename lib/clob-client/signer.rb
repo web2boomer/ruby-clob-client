@@ -6,11 +6,12 @@ module ClobClient
   class Signer
     attr_reader :private_key, :chain_id
 
-    def initialize(private_key, chain_id)
+    def initialize(private_key, chain_id, logger: nil)
       raise ArgumentError, 'private_key and chain_id are required' if private_key.nil? || chain_id.nil?
       @private_key = private_key
       @key = Eth::Key.new priv: private_key
       @chain_id = chain_id
+      @logger = logger
     end
 
     def address

@@ -6,36 +6,33 @@ require 'digest/keccak'
 
 module ClobClient
   module Signing
+    # === HMAC ===
     module HMAC
 
-      def self.build_hmac_signature(secret, timestamp, method, path, body)
-        message = "#{timestamp}#{method.upcase}#{path}#{body}"
-        hmac = OpenSSL::HMAC.digest('sha256', secret, message)
-        Base64.strict_encode64(hmac)
+      
+      def self.build_hmac_signature(secret, timestamp, method, request_path, body = nil)
+        base64_secret = Base64.urlsafe_decode64(secret)
+        normalized_body = body ? body : ""
+        message = "#{timestamp}#{method.upcase}#{request_path}#{normalized_body}"
+        
+        # Debug logging
+        puts "[HMAC DEBUG] Secret (base64): #{secret}"
+        puts "[HMAC DEBUG] Timestamp: #{timestamp}"
+        puts "[HMAC DEBUG] Method: #{method}"
+        puts "[HMAC DEBUG] Request path: #{request_path}"
+        puts "[HMAC DEBUG] Body: #{normalized_body}"
+        puts "[HMAC DEBUG] Message to sign: #{message}"
+        
+        hmac = OpenSSL::HMAC.digest('sha256', base64_secret, message.encode('UTF-8'))
+        signature = Base64.urlsafe_encode64(hmac)
+        
+        puts "[HMAC DEBUG] Generated signature: #{signature}"
+        
+        signature
       end
-
-    #   def self.build_hmac_signature(secret, timestamp, method, request_path, body = nil)
-    #     base64_secret = Base64.urlsafe_decode64(secret)
-    #     normalized_body = body ? body : ""
-    #     message = "#{timestamp}#{method.upcase}#{request_path}#{normalized_body}"
-        
-    #     # Debug logging
-    #     puts "[HMAC DEBUG] Secret (base64): #{secret}"
-    #     puts "[HMAC DEBUG] Timestamp: #{timestamp}"
-    #     puts "[HMAC DEBUG] Method: #{method}"
-    #     puts "[HMAC DEBUG] Request path: #{request_path}"
-    #     puts "[HMAC DEBUG] Body: #{normalized_body}"
-    #     puts "[HMAC DEBUG] Message to sign: #{message}"
-        
-    #     hmac = OpenSSL::HMAC.digest('sha256', base64_secret, message.encode('UTF-8'))
-    #     signature = Base64.urlsafe_encode64(hmac)
-        
-    #     puts "[HMAC DEBUG] Generated signature: #{signature}"
-        
-    #     signature
-    #   end
     end
 
+    # === MODEL ===
     module Model
       def self.keccak256(data)
         Digest::Keccak.digest(data, 256)

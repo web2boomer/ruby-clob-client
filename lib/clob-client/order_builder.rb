@@ -61,10 +61,11 @@ module ClobClient
     include OrderBuilderConstants
     include OrderBuilderHelpers
 
-    def initialize(signer, sig_type: nil, funder: nil)
+    def initialize(signer, sig_type: nil, funder: nil, logger: nil)
       @signer = signer
       @sig_type = sig_type || 'EOA'  # Default to EOA if not specified
       @funder = funder || @signer.address
+      @logger = logger
     end
 
 
@@ -106,7 +107,7 @@ module ClobClient
       tick_size = options[:tick_size]
       neg_risk = options[:neg_risk]
       round_config = ROUNDING_CONFIG[tick_size]
-      puts "[DEBUG] round_config in create_order: #{round_config.inspect}"
+      @logger.debug { "[DEBUG] round_config in create_order: #{round_config.inspect}" } if @logger
       side, maker_amount, taker_amount = get_order_amounts(
         order_args.side,
         order_args.size,
@@ -114,20 +115,18 @@ module ClobClient
         round_config
       )
 
-
-
-      puts "[DEBUG] side: #{side}"
-      puts "[DEBUG] maker_amount: #{maker_amount}"
-      puts "[DEBUG] taker_amount: #{taker_amount}"
-      puts "[DEBUG] round_config: #{round_config.inspect}"
+      @logger.debug { "[DEBUG] side: #{side}" } if @logger
+      @logger.debug { "[DEBUG] maker_amount: #{maker_amount}" } if @logger
+      @logger.debug { "[DEBUG] taker_amount: #{taker_amount}" } if @logger
+      @logger.debug { "[DEBUG] round_config: #{round_config.inspect}" } if @logger
 
       # Generate salt for order uniqueness
       salt = OrderBuilderHelpers.generate_salt
-      puts "[DEBUG] salt: #{salt}"
+      @logger.debug { "[DEBUG] salt: #{salt}" } if @logger
 
       # Get contract config for domain (for verifyingContract)
       contract_config = ClobClient::Config.get_contract_config(@signer.get_chain_id , neg_risk)
-      puts "[DEBUG] contract_config: #{contract_config.inspect}"
+      @logger.debug { "[DEBUG] contract_config: #{contract_config.inspect}" } if @logger
 
       order_data = ClobClient::Signing::OrderStruct.new(
         maker: @funder,
@@ -143,10 +142,10 @@ module ClobClient
         signature_type: @sig_type || ClobClient::SignatureType::EOA,
         salt: salt.to_i
       )
-      puts "[DEBUG] order_data: #{order_data.inspect}"
+      @logger.debug { "[DEBUG] order_data: #{order_data.inspect}" } if @logger
 
       order_data.sign_order_message(@signer)
-      puts "[DEBUG] signed order: #{order_data.inspect}"
+      @logger.debug { "[DEBUG] signed order: #{order_data.inspect}" } if @logger
       order_data
     end
 
