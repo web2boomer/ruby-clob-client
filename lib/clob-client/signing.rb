@@ -150,19 +150,23 @@ module ClobClient
       TYPE_HASH = "Order(uint256 salt,address maker,address signer,address taker,uint256 tokenId,uint256 makerAmount,uint256 takerAmount,uint256 expiration,uint256 nonce,uint256 feeRateBps,uint8 side,uint8 signatureType)"
 
       def signable_bytes(domain)
-        # Encode fields in the correct order as per the Python reference
+        # Solidity type: uint256
         salt_enc        = Model.encode_uint256(@salt)
-        maker_enc       = Model.encode_string(@maker)
-        signer_enc      = Model.encode_string(@signer)
-        taker_enc       = Model.encode_string(@taker)
-        token_id_enc    = Model.encode_string(@token_id)
-        maker_amt_enc   = Model.encode_string(@maker_amount)
-        taker_amt_enc   = Model.encode_string(@taker_amount)
-        expiration_enc  = Model.encode_string(@expiration)
-        nonce_enc       = Model.encode_string(@nonce)
-        fee_bps_enc     = Model.encode_string(@fee_rate_bps)
-        side_enc        = Model.encode_string(@side.to_i)  # uint8, not hashed string
-        sig_type_enc    = Model.encode_uint256(@signature_type.to_i)  # uint8, not hashed string
+        token_id_enc    = Model.encode_uint256(@token_id)
+        maker_amt_enc   = Model.encode_uint256(@maker_amount)
+        taker_amt_enc   = Model.encode_uint256(@taker_amount)
+        expiration_enc  = Model.encode_uint256(@expiration)
+        nonce_enc       = Model.encode_uint256(@nonce)
+        fee_bps_enc     = Model.encode_uint256(@fee_rate_bps)
+
+        # Solidity type: address (20-byte left-padded)
+        maker_enc       = Model.encode_address(@maker)
+        signer_enc      = Model.encode_address(@signer)
+        taker_enc       = Model.encode_address(@taker)
+
+        # Solidity type: uint8
+        side_enc        = Model.encode_uint8(@side.to_i)
+        sig_type_enc    = Model.encode_uint8(@signature_type.to_i)
 
         packed = TYPE_HASH + salt_enc + maker_enc + signer_enc + taker_enc +
                  token_id_enc + maker_amt_enc + taker_amt_enc + expiration_enc +
@@ -170,7 +174,9 @@ module ClobClient
 
         struct_hash = Model.keccak256(packed)
         domain_separator = Model.domain_separator_hash(domain)
-        Model.create_eip712_digest(domain_separator, struct_hash)
+        digest = Model.create_eip712_digest(domain_separator, struct_hash)
+        puts "Digest to sign: 0x" + digest.unpack1("H*")
+        digest
       end
 
       def sign_order_message(signer)
