@@ -97,6 +97,7 @@ module ClobClient
         timestamp_enc  = Model.encode_string(@timestamp.to_s)
         nonce_enc      = Model.encode_uint256(@nonce.to_i)
         message_enc    = Model.encode_string(@message)
+        
         packed = TYPE_HASH + address_enc + timestamp_enc + nonce_enc + message_enc
         struct_hash = Model.keccak256(packed)
         domain_separator = Model.domain_separator_hash(domain)
@@ -131,19 +132,19 @@ module ClobClient
 
       def to_h
       {
+        salt: @salt,
         maker: @maker,
+        signer: @signer,
         taker: @taker,
         token_id: @token_id,
         maker_amount: @maker_amount,
         taker_amount: @taker_amount,
-        side: @side,
-        fee_rate_bps: @fee_rate_bps,
-        nonce: @nonce,
-        signer: @signer,
         expiration: @expiration,
-        signature: @signature,
+        nonce: @nonce,
+        fee_rate_bps: @fee_rate_bps,
+        side: @side,
         signature_type: @signature_type,
-        salt: @salt
+        signature: @signature
       }
       end
 
@@ -185,7 +186,6 @@ module ClobClient
     # === EIP712 ===
     module EIP712
       CLOB_DOMAIN_NAME = 'ClobAuthDomain'
-      # ORDER_DOMAIN_NAME = 'Polymarket'
       CLOB_VERSION = '1'
       MSG_TO_SIGN = 'This message attests that I control the given wallet'
 
