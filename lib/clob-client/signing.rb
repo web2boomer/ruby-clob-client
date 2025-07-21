@@ -3,7 +3,6 @@ require 'openssl'
 require 'base64'
 require 'eth'
 require 'digest/keccak'
-require 'logger'
 
 module ClobClient
   module Signing
@@ -197,16 +196,16 @@ module ClobClient
       end
 
       def self.get_clob_auth_domain(chain_id, contract_config = nil)
-        domain = {
-          name: CLOB_DOMAIN_NAME,
-          version: CLOB_VERSION,
-          chainId: chain_id
-        }
+        domain = Hash.new
+        domain[:name] = CLOB_DOMAIN_NAME
+        domain[:name] = "Polymarket CTF Exchange" if contract_config
+        domain[:version] = CLOB_VERSION
+        domain[:chainId] = chain_id
         domain[:verifyingContract] = contract_config.exchange if contract_config&.exchange
         domain
       end
 
-      def self.sign_clob_auth_message(signer, timestamp, nonce, logger: nil)
+      def self.sign_clob_auth_message(signer, timestamp, nonce)
         domain = get_clob_auth_domain(signer.get_chain_id)
 
         clob_auth = ClobClient::Signing::ClobAuth.new(

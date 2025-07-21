@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 require 'net/http'
 require 'uri'
-require 'logger'
 require_relative 'clob_types'
 require 'json'
 
 module ClobClient
   class Client
-    attr_reader :host, :chain_id, :signer, :creds, :mode, :builder, :logger
+    attr_reader :host, :chain_id, :signer, :creds, :mode, :builder
 
     def initialize(host:, chain_id: nil, key: nil, creds: nil, signature_type: nil, funder: nil)
       # Remove trailing slash from host
