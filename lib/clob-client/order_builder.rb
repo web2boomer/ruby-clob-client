@@ -137,7 +137,8 @@ module ClobClient
       )
       puts  "[DEBUG] order_data: #{order_data.inspect}" 
 
-      domain = ClobClient::Signing::EIP712.get_clob_auth_domain(@signer.get_chain_id, contract_config.exchange)
+      domain = ClobClient::Signing::EIP712.get_clob_auth_domain(@signer.get_chain_id, contract_config)
+      puts "[DEBUG] domain: #{domain.inspect}"
       signable_data = order_data.signable_bytes(domain)
       puts "Digest to sign: 0x" + signable_data.unpack1("H*")
       

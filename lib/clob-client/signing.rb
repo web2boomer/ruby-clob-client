@@ -57,18 +57,17 @@ module ClobClient
       end
 
       def self.domain_separator_hash(domain)
+        puts "[DEBUG] domain in domain_separator_hash: #{domain.inspect}"
+        name_hash     = encode_string(domain[:name])
+        version_hash  = encode_string(domain[:version])
+        chain_id_enc  = encode_uint256(domain[:chainId])
+
         if domain[:verifyingContract]
           type_hash     = encode_string("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-          name_hash     = encode_string(domain[:name])
-          version_hash  = encode_string(domain[:version])
-          chain_id_enc  = encode_uint256(domain[:chainId])
           contract_enc  = encode_address(domain[:verifyingContract])
           packed = type_hash + name_hash + version_hash + chain_id_enc + contract_enc
         else
           type_hash     = encode_string("EIP712Domain(string name,string version,uint256 chainId)")
-          name_hash     = encode_string(domain[:name])
-          version_hash  = encode_string(domain[:version])
-          chain_id_enc  = encode_uint256(domain[:chainId])
           packed = type_hash + name_hash + version_hash + chain_id_enc
         end
         keccak256(packed)
@@ -101,7 +100,9 @@ module ClobClient
         packed = TYPE_HASH + address_enc + timestamp_enc + nonce_enc + message_enc
         struct_hash = Model.keccak256(packed)
         domain_separator = Model.domain_separator_hash(domain)
+        puts "domain_separator: #{domain_separator.unpack1('H*')}"
         digest = Model.create_eip712_digest(domain_separator, struct_hash)
+        puts "digest: #{struct_hash.unpack1('H*')}"
         digest
       end
     end
@@ -175,11 +176,12 @@ module ClobClient
 
         struct_hash = Model.keccak256(packed) # need .pack("H*") ?
         domain_separator = Model.domain_separator_hash(domain)
-        Model.create_eip712_digest(domain_separator, struct_hash)
+        puts "domain_separator: #{domain_separator.unpack1('H*')}"
+        digest = Model.create_eip712_digest(domain_separator, struct_hash)
+        puts "digest: #{struct_hash.unpack1('H*')}"
+        digest
       end
 
-
- 
 
     end
 
@@ -194,13 +196,13 @@ module ClobClient
         "0x#{hex_string}"
       end
 
-      def self.get_clob_auth_domain(chain_id, exchange_address = nil)
+      def self.get_clob_auth_domain(chain_id, contract_config = nil)
         domain = {
           name: CLOB_DOMAIN_NAME,
           version: CLOB_VERSION,
           chainId: chain_id
         }
-        domain[:verifyingContract] = exchange_address if exchange_address
+        domain[:verifyingContract] = contract_config.exchange if contract_config&.exchange
         domain
       end
 
