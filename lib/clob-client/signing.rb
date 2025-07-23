@@ -39,16 +39,18 @@ module ClobClient
       end
 
       def self.encode_uint256(val)
-        Eth::Abi.encode("uint256", val)
+        val = val.to_i
+        raise ArgumentError, "uint256 out of range" if val < 0 || val >= 2**256
+        [val.to_s(16).rjust(64, '0')].pack('H*')
       end
 
       def self.encode_uint8(val)
-        Eth::Abi.encode("uint8", val)
+        [val.to_i].pack('C').rjust(32, "\x00")
       end
 
       def self.encode_address(addr)
         return "" unless addr
-        Eth::Abi.encode("address", addr)
+        [addr.sub(/^0x/, '')].pack('H*').rjust(32, "\x00")
       end
 
       def self.encode_string(str)
