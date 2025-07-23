@@ -99,6 +99,3 @@ Gemfile.lock
 # Ignore temporary files
 *.tmp
 *.temp 
-
-
-/references
